@@ -42,3 +42,6 @@ pooler on port `6543`; the backend automatically disables its local SQLAlchemy p
 for that mode.
 
 Run backend tests with `python -m pytest` from `backend`.
+
+See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) for the complete setup, verification,
+security, and troubleshooting checklist.
