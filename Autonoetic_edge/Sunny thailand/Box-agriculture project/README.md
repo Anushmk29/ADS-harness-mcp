@@ -16,9 +16,9 @@ packing constraints, and financial gates remain deterministic and auditable.
 ## Local development
 
 1. Copy `backend/.env.example` to `backend/.env` and replace the secret.
-2. Start PostgreSQL and Redis with `docker compose -f backend/docker-compose.yml up -d postgres redis`.
-3. In `backend`, install dependencies and run `uvicorn app.main:app --reload`.
+2. From the project root, start PostgreSQL and Redis with `docker compose up -d postgres redis`.
+3. In `backend`, run `python -m pip install --group dev -e .`, then
+   `uvicorn app.main:app --reload`.
 4. In `web`, copy `.env.example` to `.env.local`, run `npm install`, then `npm run dev`.
 
 Run backend tests with `python -m pytest` from `backend`.
-
