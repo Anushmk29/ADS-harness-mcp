@@ -1,9 +1,14 @@
+import os
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app import models  # noqa: F401 - registers every model with Base
+# Tests deliberately use an isolated database; application runtime requires Supabase.
+os.environ.setdefault("DATABASE_URL", "sqlite:///./fresh_produce_test.db")
+
+from app import models  # noqa: E402, F401 - registers every model with Base
 from app.core.database import Base
 
 

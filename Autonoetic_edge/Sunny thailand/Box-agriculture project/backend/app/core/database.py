@@ -1,13 +1,46 @@
-from sqlalchemy import create_engine
+from typing import Any
+
+from sqlalchemy import create_engine, make_url
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-# Handle sqlite vs postgresql
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+
+def normalize_database_url(database_url: str) -> str:
+    """Return a SQLAlchemy URL suitable for Supabase or the SQLite test fallback."""
+    if database_url.startswith("sqlite"):
+        return database_url
+
+    url = make_url(database_url)
+    if url.drivername in {"postgres", "postgresql"}:
+        url = url.set(drivername="postgresql+psycopg2")
+
+    if "supabase." in (url.host or "") and "sslmode" not in url.query:
+        url = url.update_query_dict({"sslmode": "require"})
+
+    return url.render_as_string(hide_password=False)
+
+
+def build_engine_options(database_url: str) -> dict[str, Any]:
+    """Choose safe connection settings for SQLite and Supabase pooler modes."""
+    if database_url.startswith("sqlite"):
+        return {"connect_args": {"check_same_thread": False}}
+
+    url = make_url(database_url)
+    if url.port == 6543 and "supabase." in (url.host or ""):
+        return {"poolclass": NullPool}
+
+    return {"pool_size": 5, "max_overflow": 5, "pool_recycle": 300}
+
+
+database_url = normalize_database_url(settings.DATABASE_URL)
 
 engine = create_engine(
-    settings.DATABASE_URL, connect_args=connect_args, echo=False, pool_pre_ping=True
+    database_url,
+    echo=False,
+    pool_pre_ping=True,
+    **build_engine_options(database_url),
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
