@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import openpyxl
 
@@ -9,9 +10,21 @@ sys.path.insert(0, backend_dir)
 from app.core.database import SessionLocal, engine, Base
 from app.core.security import hash_password
 from app.models import (
-    User, UserRole, Product, BoxCatalogue, Customer, PriceList,
+    User, UserRole, Product, BoxCatalogue, Customer,
     BoxMaterial, TemperatureZone, ControlStatus, ProduceType, WeightClass
 )
+
+
+def estimate_unit_volume_cm3(pack_size: str) -> float:
+    """Conservative seed estimate; operators should calibrate it in master data."""
+    normalized = pack_size.lower().replace(",", ".")
+    match = re.search(r"(\d+(?:\.\d+)?)\s*(kg|g)", normalized)
+    if not match:
+        return 1000.0
+    amount = float(match.group(1))
+    grams = amount * 1000 if match.group(2) == "kg" else amount
+    # Loose produce is estimated at 0.25 g/cm3 to avoid optimistic box utilization.
+    return max(250.0, round(grams / 0.25, 2))
 
 def seed_all():
     Base.metadata.create_all(bind=engine)
@@ -93,9 +106,7 @@ def seed_all():
             for r in range(3, ws_g.max_row + 1):
                 desc = str(ws_g.cell(r, 4).value or "").strip()
                 foam = ws_g.cell(r, 5).value
-                cardboard = ws_g.cell(r, 6).value
                 el = ws_g.cell(r, 7).value
-                combinable = ws_g.cell(r, 8).value
                 if desc:
                     clean_name = desc.replace("**", "").replace("BB", "").replace("TT", "").replace("NN", "").strip()
                     grouping_tax[clean_name.lower()] = {
@@ -135,7 +146,8 @@ def seed_all():
                             control_status=control,
                             produce_type=ptype,
                             weight_class=wclass,
-                            default_pack_sizes=[pack] if pack else ["100g"]
+                            default_pack_sizes=[pack] if pack else ["100g"],
+                            default_unit_volume_cm3=estimate_unit_volume_cm3(pack),
                         )
                         db.add(p)
                         existing_prods[code] = p
@@ -166,7 +178,8 @@ def seed_all():
                             control_status=ControlStatus.EL if el else ControlStatus.COMBINABLE,
                             produce_type=ProduceType.LEAFY if "ผัก" in clean_name else ProduceType.FRUIT,
                             weight_class=WeightClass.LIGHT,
-                            default_pack_sizes=["100g tray", "200g", "500g", "1kg"]
+                            default_pack_sizes=["100g tray", "200g", "500g", "1kg"],
+                            default_unit_volume_cm3=estimate_unit_volume_cm3("200g"),
                         )
                         db.add(p)
                         existing_prods[code] = p

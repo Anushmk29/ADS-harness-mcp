@@ -54,7 +54,6 @@ def setup_order(db_session):
         produce_type=ProduceType.HERB,
         weight_class=WeightClass.LIGHT,
         botanical_family="Lamiaceae",
-        default_unit_volume_cm3=1000,
         default_pack_sizes=["1kg"],
     )
     catalogue = BoxCatalogue(

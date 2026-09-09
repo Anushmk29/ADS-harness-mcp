@@ -42,7 +42,7 @@ class Product(Base):
     produce_type = Column(Enum(ProduceType), nullable=False)
     weight_class = Column(Enum(WeightClass), nullable=False)
     botanical_family = Column(String(128), nullable=True, index=True)
-    default_unit_volume_cm3 = Column(Numeric(10, 2), nullable=True)
+    default_unit_volume_cm3 = Column(Numeric(10, 2), nullable=False, default=1000.00)
     default_pack_sizes = Column(JSON, nullable=False, default=list) # List of pack sizes e.g. ['100g', '200g']
     tare_weight_allowance_g = Column(Numeric(8, 2), default=15.00)
     default_buffer_percentage = Column(Numeric(5, 2), default=0.00) # Sticky buffer memory

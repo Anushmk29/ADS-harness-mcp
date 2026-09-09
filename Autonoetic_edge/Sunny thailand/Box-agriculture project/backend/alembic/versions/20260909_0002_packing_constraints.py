@@ -25,11 +25,30 @@ def upgrade() -> None:
             sa.Column("confirmed_net_weight_kg", sa.Numeric(10, 2)),
         )
 
-    product_columns = _columns("products")
+    product_column_details = {
+        column["name"]: column for column in sa.inspect(op.get_bind()).get_columns("products")
+    }
+    product_columns = set(product_column_details)
     if "botanical_family" not in product_columns:
         op.add_column("products", sa.Column("botanical_family", sa.String(128)))
     if "default_unit_volume_cm3" not in product_columns:
         op.add_column("products", sa.Column("default_unit_volume_cm3", sa.Numeric(10, 2)))
+    op.execute(
+        sa.text(
+            "UPDATE products SET default_unit_volume_cm3 = 1000 "
+            "WHERE default_unit_volume_cm3 IS NULL"
+        )
+    )
+    volume_was_nullable = product_column_details.get("default_unit_volume_cm3", {}).get(
+        "nullable", True
+    )
+    if volume_was_nullable:
+        with op.batch_alter_table("products") as batch_op:
+            batch_op.alter_column(
+                "default_unit_volume_cm3",
+                existing_type=sa.Numeric(10, 2),
+                nullable=False,
+            )
 
     inspector = sa.inspect(op.get_bind())
     index_names = {index["name"] for index in inspector.get_indexes("products")}
