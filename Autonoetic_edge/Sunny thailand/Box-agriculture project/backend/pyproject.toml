@@ -17,6 +17,13 @@ dependencies = [
   "alembic>=1.17,<2",
 ]
 
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [dependency-groups]
 dev = [
   "httpx>=0.28,<1",

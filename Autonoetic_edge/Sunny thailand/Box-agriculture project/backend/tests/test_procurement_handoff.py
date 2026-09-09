@@ -144,5 +144,7 @@ def test_handoff_01_is_canonical_hashed_and_advances_orders(db_session):
     assert len(handoff.payload_sha256) == 64
     assert handoff.payload_json["procurement_batch_id"] == batch.id
     assert handoff.payload_json["confirmed_orders"][0]["items"][0]["confirmed_pack_count"] == 8
+    assert order.items[0].confirmed_pack_count == 8
+    assert float(order.items[0].confirmed_net_weight_kg) == 8.0
     assert order.status == OrderStatus.HANDOFF_01_SENT
     assert db_session.query(AgentHandoff).count() == 1

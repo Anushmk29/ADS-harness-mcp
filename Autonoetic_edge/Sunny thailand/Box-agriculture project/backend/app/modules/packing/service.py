@@ -45,13 +45,22 @@ class PackingPlanningService:
                 id=catalogue.id,
                 material=catalogue.box_type,
                 max_safe_net_weight_kg=float(catalogue.max_safe_net_weight_kg),
+                internal_volume_cm3=float(catalogue.volume_m3) * 1_000_000,
             )
             for catalogue in catalogues
         ]
         demands = []
         for item in order.items:
-            count = item.ordered_pack_count
-            unit_weight = float(item.estimated_net_weight_kg) / count
+            if item.confirmed_pack_count is None or item.confirmed_net_weight_kg is None:
+                raise ValueError("Handoff 01 confirmed quantities are required for packing")
+            count = item.confirmed_pack_count
+            if count == 0:
+                continue
+            if not item.product.default_unit_volume_cm3:
+                raise ValueError(
+                    f"Product {item.product.t_code} requires default unit volume master data"
+                )
+            unit_weight = float(item.confirmed_net_weight_kg) / count
             demands.append(
                 PackingDemand(
                     product_id=item.product_id,
@@ -63,6 +72,8 @@ class PackingPlanningService:
                     control_status=item.product.control_status,
                     produce_type=item.product.produce_type,
                     weight_class=item.product.weight_class,
+                    botanical_family=item.product.botanical_family,
+                    unit_volume_cm3=float(item.product.default_unit_volume_cm3),
                 )
             )
 
@@ -140,12 +151,8 @@ class FinalPackingService:
         self.db = db
 
     def lock_order(self, *, order_id: str, actor: User) -> list[Box]:
-        if actor.role not in {
-            UserRole.FLOOR_STAFF,
-            UserRole.OPERATIONS_MANAGER,
-            UserRole.SYSTEM_ADMIN,
-        }:
-            raise PermissionError("A floor role must confirm final packing")
+        if actor.role not in {UserRole.OPERATIONS_MANAGER, UserRole.AI_AGENT_2}:
+            raise PermissionError("Final packing must be locked by Operations or Agent 2")
         order = self.db.query(ClientOrder).filter_by(id=order_id).with_for_update().first()
         if not order:
             raise ValueError(f"Client order {order_id} not found")

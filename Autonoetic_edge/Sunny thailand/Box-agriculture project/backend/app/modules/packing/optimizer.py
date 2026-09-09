@@ -22,9 +22,17 @@ class PackingDemand:
     control_status: ControlStatus
     produce_type: ProduceType
     weight_class: WeightClass
+    botanical_family: str | None
+    unit_volume_cm3: float
 
     def compatibility_key(self, route_code: str) -> tuple[str, ...]:
-        control = "NGA_MIX_ALLOWED" if route_code.upper() == "NGA" else self.control_status.value
+        if route_code.upper() == "NGA":
+            control = "NGA_MIX_ALLOWED"
+        elif self.control_status == ControlStatus.EL:
+            # Missing family data is isolated per product rather than mixed unsafely.
+            control = f"EL:{self.botanical_family or self.product_id}"
+        else:
+            control = self.control_status.value
         return (
             self.box_material.value,
             self.temperature.value,
@@ -39,6 +47,11 @@ class PackingOption:
     id: str
     material: BoxMaterial
     max_safe_net_weight_kg: float
+    internal_volume_cm3: float
+
+    @property
+    def usable_volume_cm3(self) -> float:
+        return self.internal_volume_cm3 * 0.92
 
 
 @dataclass
@@ -52,6 +65,7 @@ class PlannedItem:
     control_status: ControlStatus
     produce_type: ProduceType
     weight_class: WeightClass
+    unit_volume_cm3: float
 
     @property
     def net_weight_kg(self) -> float:
@@ -67,6 +81,10 @@ class PlannedBox:
     @property
     def total_net_weight_kg(self) -> float:
         return round(sum(item.net_weight_kg for item in self.items), 2)
+
+    @property
+    def total_volume_cm3(self) -> float:
+        return round(sum(item.pack_count * item.unit_volume_cm3 for item in self.items), 2)
 
 
 @dataclass(frozen=True)
@@ -87,8 +105,11 @@ class DeterministicPackingOptimizer:
     ) -> PackingPlan:
         if not options:
             raise ValueError("At least one active box option is required")
-        if any(d.pack_count < 1 or d.unit_weight_kg <= 0 for d in demands):
-            raise ValueError("Packing demand counts and weights must be positive")
+        if any(
+            d.pack_count < 1 or d.unit_weight_kg <= 0 or d.unit_volume_cm3 <= 0
+            for d in demands
+        ):
+            raise ValueError("Packing demand counts, weights, and volumes must be positive")
 
         usable = sorted(options, key=lambda option: (option.max_safe_net_weight_kg, option.id))
         boxes: list[PlannedBox] = []
@@ -111,6 +132,8 @@ class DeterministicPackingOptimizer:
                 if box.compatibility_key == key
                 and box.total_net_weight_kg + unit.unit_weight_kg
                 <= box.option.max_safe_net_weight_kg + 1e-9
+                and box.total_volume_cm3 + unit.unit_volume_cm3
+                <= box.option.usable_volume_cm3 + 1e-9
             ]
             if candidates:
                 box = min(
@@ -128,6 +151,7 @@ class DeterministicPackingOptimizer:
                     for option in usable
                     if option.material == unit.box_material
                     and option.max_safe_net_weight_kg + 1e-9 >= unit.unit_weight_kg
+                    and option.usable_volume_cm3 + 1e-9 >= unit.unit_volume_cm3
                 ]
                 if not fitting:
                     raise ValueError(
@@ -159,6 +183,7 @@ class DeterministicPackingOptimizer:
                         control_status=unit.control_status,
                         produce_type=unit.produce_type,
                         weight_class=unit.weight_class,
+                        unit_volume_cm3=unit.unit_volume_cm3,
                     )
                 )
 

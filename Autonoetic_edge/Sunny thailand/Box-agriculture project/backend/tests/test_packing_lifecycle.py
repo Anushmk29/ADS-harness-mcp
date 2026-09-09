@@ -30,6 +30,12 @@ def setup_order(db_session):
         full_name="Floor Packer",
         role=UserRole.FLOOR_STAFF,
     )
+    manager = User(
+        email="manager@example.com",
+        password_hash="unused",
+        full_name="Operations Manager",
+        role=UserRole.OPERATIONS_MANAGER,
+    )
     customer = Customer(
         client_code="BUYER-1",
         company_name="Buyer One",
@@ -47,6 +53,8 @@ def setup_order(db_session):
         control_status=ControlStatus.COMBINABLE,
         produce_type=ProduceType.HERB,
         weight_class=WeightClass.LIGHT,
+        botanical_family="Lamiaceae",
+        default_unit_volume_cm3=1000,
         default_pack_sizes=["1kg"],
     )
     catalogue = BoxCatalogue(
@@ -59,7 +67,7 @@ def setup_order(db_session):
         volume_m3=0.024,
         max_safe_net_weight_kg=5,
     )
-    db_session.add_all([agent, packer, customer, product, catalogue])
+    db_session.add_all([agent, packer, manager, customer, product, catalogue])
     db_session.flush()
     raw_file = RawOrderFile(
         file_name="order.xlsx",
@@ -89,26 +97,28 @@ def setup_order(db_session):
             pack_size="1kg",
             ordered_pack_count=6,
             estimated_net_weight_kg=6,
+            confirmed_pack_count=4,
+            confirmed_net_weight_kg=4,
         )
     )
     db_session.commit()
-    return agent, packer, order
+    return agent, packer, manager, order
 
 
 def test_design_persists_deterministic_boxes_and_starts_floor_work(db_session):
-    agent, packer, order = setup_order(db_session)
+    agent, packer, _, order = setup_order(db_session)
 
     boxes = PackingPlanningService(db_session).design_order(order_id=order.id, actor=agent)
     PackingPlanningService(db_session).start_floor_packing(order_id=order.id, actor=packer)
 
-    assert len(boxes) == 2
-    assert [sum(item.final_packed_count for item in box.items) for box in boxes] == [5, 1]
+    assert len(boxes) == 1
+    assert [sum(item.final_packed_count for item in box.items) for box in boxes] == [4]
     assert order.status == OrderStatus.FLOOR_PACKING
     assert all(box.qr_code_uid.startswith("BOX-TETE-20260910-") for box in boxes)
 
 
 def test_final_pack_lock_is_immutable_and_produces_handoff_02(db_session):
-    agent, packer, order = setup_order(db_session)
+    agent, packer, manager, order = setup_order(db_session)
     boxes = PackingPlanningService(db_session).design_order(order_id=order.id, actor=agent)
     PackingPlanningService(db_session).start_floor_packing(order_id=order.id, actor=packer)
     for box in boxes:
@@ -116,11 +126,18 @@ def test_final_pack_lock_is_immutable_and_produces_handoff_02(db_session):
         box.actual_gross_weight_kg = float(box.actual_net_weight_kg) + 0.5
     db_session.commit()
 
-    FinalPackingService(db_session).lock_order(order_id=order.id, actor=packer)
+    try:
+        FinalPackingService(db_session).lock_order(order_id=order.id, actor=packer)
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("Floor staff must not be allowed to lock final packing")
+
+    FinalPackingService(db_session).lock_order(order_id=order.id, actor=manager)
     handoff = HandoffService(db_session).return_handoff_02(order_id=order.id, actor=agent)
 
     assert all(box.is_locked for box in db_session.query(Box).all())
     assert order.status == OrderStatus.HANDOFF_02_RETURNED
     assert handoff.handoff_type == "HANDOFF_02_FINAL_PACKING"
-    assert handoff.payload_json["total_boxes_count"] == 2
+    assert handoff.payload_json["total_boxes_count"] == 1
     assert db_session.query(AgentHandoff).count() == 1

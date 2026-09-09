@@ -78,9 +78,8 @@ def confirm_final_pack(
     client_order_id: str,
     db: Session = Depends(get_db),
     actor: User = Depends(require_roles(
-        UserRole.FLOOR_STAFF,
         UserRole.OPERATIONS_MANAGER,
-        UserRole.SYSTEM_ADMIN,
+        UserRole.AI_AGENT_2,
     )),
 ):
     try:
@@ -176,7 +175,8 @@ def get_sub_customer_packing_list(client_order_id: str, db: Session = Depends(ge
 def override_box_size(
     box_id: str,
     payload: BoxOverrideRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.FLOOR_STAFF, UserRole.OPERATIONS_MANAGER)),
 ):
     """
     Box Management: Floor staff manual override to adjust physical box dimensions or catalogue type
@@ -207,7 +207,8 @@ def override_box_size(
 def add_extra_box_to_order(
     client_order_id: str,
     payload: AddBoxRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.FLOOR_STAFF, UserRole.OPERATIONS_MANAGER)),
 ):
     """
     Box Management: Allows packers to add an extra box, adjusting total box count.
@@ -234,7 +235,8 @@ def add_extra_box_to_order(
 @router.post("/boxes/move-items")
 def move_items_between_boxes(
     payload: MoveItemsRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.FLOOR_STAFF, UserRole.OPERATIONS_MANAGER)),
 ):
     """Allows packers to reallocate produce items between boxes on the floor."""
     service = PackingOverrideService(db)
@@ -256,7 +258,8 @@ def sync_transportation_manifest(
     route_code: str,
     shipment_date: str,
     flight_carrier: Optional[str] = "Thai Airways / TG930",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.OPERATIONS_MANAGER, UserRole.AI_AGENT_2)),
 ):
     """
     Finalized packing list automatically syncs to generate accurate

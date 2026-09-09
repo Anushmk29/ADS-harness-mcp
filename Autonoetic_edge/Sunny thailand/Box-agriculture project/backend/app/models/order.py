@@ -67,8 +67,10 @@ class ClientOrderItem(Base):
     raw_produce_text = Column(String(256), nullable=False)
     pack_size = Column(String(64), nullable=False)
     ordered_pack_count = Column(Integer, nullable=False)
+    confirmed_pack_count = Column(Integer, nullable=True)
     unit_price_eur = Column(Numeric(10, 2), nullable=True)
     estimated_net_weight_kg = Column(Numeric(10, 2), nullable=False)
+    confirmed_net_weight_kg = Column(Numeric(10, 2), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     client_order = relationship('ClientOrder', back_populates='items')

@@ -39,6 +39,14 @@ class HandoffService:
         allocated_counts = self._allocate_confirmed_counts(batch, orders)
         confirmed_orders = []
         for order in sorted(orders, key=lambda current: current.order_ref_id):
+            for item in order.items:
+                item.confirmed_pack_count = allocated_counts[item.id]
+                item.confirmed_net_weight_kg = round(
+                    float(item.estimated_net_weight_kg)
+                    / item.ordered_pack_count
+                    * allocated_counts[item.id],
+                    2,
+                )
             confirmed_orders.append(
                 {
                     "client_id": order.customer_id,
@@ -51,13 +59,8 @@ class HandoffService:
                             "product_code": item.product.t_code,
                             "product_name_en": item.product.name_en,
                             "pack_size": item.pack_size,
-                            "confirmed_pack_count": allocated_counts[item.id],
-                            "confirmed_net_weight_kg": round(
-                                float(item.estimated_net_weight_kg)
-                                / item.ordered_pack_count
-                                * allocated_counts[item.id],
-                                2,
-                            ),
+                            "confirmed_pack_count": item.confirmed_pack_count,
+                            "confirmed_net_weight_kg": float(item.confirmed_net_weight_kg),
                             "box_material_req": item.product.box_material.value,
                             "temperature_req": item.product.temperature.value,
                             "control_status": item.product.control_status.value,
