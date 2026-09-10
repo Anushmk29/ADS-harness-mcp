@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, ClipboardCheck, LayoutDashboard, LogOut, PackageOpen, Sprout } from "lucide-react";
+import { Boxes, ClipboardCheck, LayoutDashboard, LogOut, PackageOpen, ReceiptText, Sprout } from "lucide-react";
 import type { ReactNode } from "react";
 
 const nav = [
@@ -10,6 +10,7 @@ const nav = [
   { href: "/orders", label: "Order intake", icon: PackageOpen },
   { href: "/procurement", label: "Procurement", icon: ClipboardCheck },
   { href: "/packing", label: "Packing floor", icon: Boxes },
+  { href: "/billing", label: "Billing", icon: ReceiptText },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -38,4 +39,3 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

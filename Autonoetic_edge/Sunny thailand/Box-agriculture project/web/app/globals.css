@@ -76,12 +76,13 @@ textarea { resize:vertical; font-family:Consolas, monospace; line-height:1.5; }
 .packing-actions span { color:var(--muted); font-size:.78rem; line-height:1.4; }
 .packing-actions .lock-action { color:white; background:var(--navy); border-color:var(--navy); }
 .packing-actions .lock-action svg,.packing-actions .lock-action span { color:var(--lime); }
+.billing-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; }
+.billing-grid form:last-child { grid-column:1/-1; }
 .login-page { min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 15% 15%,#1a5550 0,transparent 32%),var(--navy); }
 .login-card { width:min(440px,100%); display:grid; gap:34px; padding:38px; border-radius:20px; background:white; box-shadow:0 25px 80px rgba(0,0,0,.22); }
 .login-card h1 { margin:6px 0 9px; font-size:2.3rem; letter-spacing:-.05em; }
 .login-card p { margin:0; color:var(--muted); }
 .login-card form { display:grid; gap:17px; }
 .login-brand { color:var(--ink); }
-@media (max-width:800px) { .app-frame { display:block; } .sidebar { position:static; width:100%; height:auto; padding:16px; flex-direction:row; align-items:center; overflow:auto; } .sidebar nav { display:flex; margin:0 0 0 24px; } .nav-link { white-space:nowrap; } .signout { margin:0 0 0 auto; } .nav-link span,.brand small { display:none; } .page { padding:30px 18px 70px; } .metric-grid,.packing-actions,.two-column { grid-template-columns:1fr; } .stage-state { display:none; } }
+@media (max-width:800px) { .app-frame { display:block; } .sidebar { position:static; width:100%; height:auto; padding:16px; flex-direction:row; align-items:center; overflow:auto; } .sidebar nav { display:flex; margin:0 0 0 24px; } .nav-link { white-space:nowrap; } .signout { margin:0 0 0 auto; } .nav-link span,.brand small { display:none; } .page { padding:30px 18px 70px; } .metric-grid,.packing-actions,.two-column,.billing-grid { grid-template-columns:1fr; } .billing-grid form:last-child { grid-column:auto; } .stage-state { display:none; } }
 @media (max-width:520px) { .brand>span:last-child { display:none; } .sidebar nav { margin-left:8px; } .nav-link { padding:11px; font-size:0; gap:0; } .split-header { align-items:flex-start; flex-direction:column; } .field-row { grid-template-columns:1fr; } .stage-row { grid-template-columns:42px 1fr 18px; } .login-card { padding:28px 22px; } }
-

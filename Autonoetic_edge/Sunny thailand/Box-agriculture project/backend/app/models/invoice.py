@@ -71,6 +71,7 @@ class Receipt(Base):
     amount_received_eur = Column(Numeric(10, 2), nullable=False)
     bank_reference = Column(String(128), nullable=False)
     receipt_pdf_url = Column(String(512), nullable=False)
+    payload_sha256 = Column(String(64), nullable=True)
     issued_by_agent = Column(String(32), default='AI_AGENT_1')
     internal_notes = Column(Text, nullable=True) # Private text field on generated receipt
     issued_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -88,6 +89,7 @@ class PaymentTransaction(Base):
     payment_date = Column(String(10), nullable=False) # 'YYYY-MM-DD'
     bank_name = Column(String(64), nullable=False)
     bank_wire_reference = Column(String(128), nullable=False)
+    payment_mode = Column(String(32), nullable=True)
     rolling_balance_remaining_eur = Column(Numeric(10, 2), nullable=False)
     internal_notes = Column(Text, nullable=True) # Private memo for owners/admins
     recorded_by = Column(String(36), ForeignKey('users.id'), nullable=True)

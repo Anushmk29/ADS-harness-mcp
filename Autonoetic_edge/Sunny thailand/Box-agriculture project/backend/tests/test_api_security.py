@@ -56,7 +56,9 @@ def test_phase_one_and_three_routes_require_authentication(db_session):
 
     consolidate = client.post("/api/v3/procurement/not-found/consolidate")
     packing_list = client.get("/api/v3/packing/orders/not-found/packing-list")
+    invoice = client.get("/api/v3/invoicing/not-found")
 
     assert consolidate.status_code == 401
     assert packing_list.status_code == 401
+    assert invoice.status_code == 401
     app.dependency_overrides.clear()

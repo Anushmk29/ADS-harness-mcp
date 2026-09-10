@@ -10,6 +10,10 @@ A modular monolith for the order-to-procurement-to-packing workflow described in
 - `backend/app/models`: SQLAlchemy persistence model
 - `web`: Next.js operator portal and packing-floor interface
 
+Phase 4 has started with the order-to-cash settlement slice: Handoff 02-backed
+invoice drafts, accounting approval and dispatch, partial/full payment gates,
+hashed receipt records, and an operator billing screen.
+
 The two agents are bounded workflow identities. Calculations, state transitions,
 packing constraints, and financial gates remain deterministic and auditable.
 

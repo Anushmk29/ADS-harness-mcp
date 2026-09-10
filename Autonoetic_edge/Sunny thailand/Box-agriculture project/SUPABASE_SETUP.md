@@ -168,7 +168,7 @@ alembic current
 The current migration head should be:
 
 ```text
-20260909_0002 (head)
+20260910_0003 (head)
 ```
 
 You can also verify the tables in Supabase:
@@ -184,7 +184,7 @@ select version_num from alembic_version;
 Expected result:
 
 ```text
-20260909_0002
+20260910_0003
 ```
 
 Run the automated backend tests separately:
