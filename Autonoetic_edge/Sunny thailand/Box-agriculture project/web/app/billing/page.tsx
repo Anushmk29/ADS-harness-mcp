@@ -99,7 +99,7 @@ export default function BillingPage() {
       <StatusMessage error={error} success={message} />
       <section className="billing-grid">
         <form className="panel form-panel" onSubmit={createDraft}>
-          <div className="section-heading"><div><h2>1. Create draft</h2><p>Agent 1 or system administrator</p></div><BadgeEuro /></div>
+          <div className="section-heading"><div><h2>1. Create draft</h2><p>AI Agent 1 only</p></div><BadgeEuro /></div>
           <label>Client order ID<input value={orderId} onChange={(event) => setOrderId(event.target.value)} required /></label>
           <button className="primary-button">Generate from final pack</button>
         </form>

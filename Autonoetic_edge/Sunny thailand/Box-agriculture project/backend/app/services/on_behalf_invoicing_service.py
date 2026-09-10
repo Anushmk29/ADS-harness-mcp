@@ -6,9 +6,11 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.audit import AuditLog
+from app.models.audit import AgentHandoff, AuditLog
 from app.models.invoice import Invoice, InvoiceLineItem, InvoiceStatus, PaymentTransaction, Receipt
 from app.models.master_data import CustomerSellingPrice, PriceList
 from app.models.order import ClientOrder, OrderStatus
@@ -17,7 +19,7 @@ from app.models.user import User, UserRole
 from app.modules.workflow.service import WorkflowService
 
 FINANCIAL_ROLES = {UserRole.ACCOUNTING_OFFICER, UserRole.SYSTEM_ADMIN}
-DRAFT_ROLES = {UserRole.AI_AGENT_1, UserRole.SYSTEM_ADMIN}
+DRAFT_ROLES = {UserRole.AI_AGENT_1}
 
 
 def _money(value: float | Decimal) -> Decimal:
@@ -41,6 +43,7 @@ class OnBehalfInvoicingService:
         sub_customer_id: str,
         product_id: str,
         pack_size: str,
+        as_of_date: str,
     ) -> Decimal:
         if main_customer_id:
             specific = (
@@ -50,7 +53,13 @@ class OnBehalfInvoicingService:
                     CustomerSellingPrice.sub_customer_id == sub_customer_id,
                     CustomerSellingPrice.product_id == product_id,
                     CustomerSellingPrice.pack_size == pack_size,
+                    CustomerSellingPrice.valid_from <= as_of_date,
+                    or_(
+                        CustomerSellingPrice.valid_to.is_(None),
+                        CustomerSellingPrice.valid_to >= as_of_date,
+                    ),
                 )
+                .order_by(CustomerSellingPrice.valid_from.desc())
                 .first()
             )
             if specific:
@@ -63,16 +72,32 @@ class OnBehalfInvoicingService:
                     CustomerSellingPrice.sub_customer_id.is_(None),
                     CustomerSellingPrice.product_id == product_id,
                     CustomerSellingPrice.pack_size == pack_size,
+                    CustomerSellingPrice.valid_from <= as_of_date,
+                    or_(
+                        CustomerSellingPrice.valid_to.is_(None),
+                        CustomerSellingPrice.valid_to >= as_of_date,
+                    ),
                 )
+                .order_by(CustomerSellingPrice.valid_from.desc())
                 .first()
             )
             if general:
                 return _money(general.selling_price_eur)
 
-        price_entry = (
+        price_entries = (
             self.db.query(PriceList)
-            .filter(PriceList.product_id == product_id, PriceList.pack_size == pack_size)
-            .first()
+            .filter(
+                PriceList.product_id == product_id,
+                PriceList.pack_size == pack_size,
+                or_(PriceList.customer_id == sub_customer_id, PriceList.customer_id.is_(None)),
+                PriceList.valid_from <= as_of_date,
+                or_(PriceList.valid_to.is_(None), PriceList.valid_to >= as_of_date),
+            )
+            .all()
+        )
+        price_entry = next(
+            (entry for entry in price_entries if entry.customer_id == sub_customer_id),
+            next((entry for entry in price_entries if entry.customer_id is None), None),
         )
         if not price_entry:
             raise ValueError(
@@ -104,7 +129,10 @@ class OnBehalfInvoicingService:
         if not boxes or any(not box.is_locked for box in boxes):
             raise ValueError(f"Order {client_order_id} does not have locked final packing")
 
-        date_str = order.raw_file.shipment_target_date.replace("-", "")
+        handoff = self._verified_handoff_02(order.id)
+
+        shipment_date = order.raw_file.shipment_target_date
+        date_str = shipment_date.replace("-", "")
         invoice_number = f"INV-{date_str}-{order.customer.client_code}-{order.id[:8]}"
         invoice = self.db.query(Invoice).filter(Invoice.client_order_id == order.id).first()
         is_new = invoice is None
@@ -121,7 +149,7 @@ class OnBehalfInvoicingService:
                 customer_id=order.customer_id,
                 seller_customer_id=order.main_customer_id,
                 invoice_type="ON_BEHALF_SUB_CUSTOMER",
-                final_packing_manifest_id=order.id,
+                final_packing_manifest_id=handoff.payload_sha256,
                 subtotal_eur=0,
                 total_amount_eur=0,
                 internal_notes=internal_notes,
@@ -138,6 +166,7 @@ class OnBehalfInvoicingService:
                     order.customer_id,
                     item.product_id,
                     item.pack_size,
+                    shipment_date,
                 )
                 line_total = _money(item.final_packed_count * price)
                 subtotal += line_total
@@ -227,7 +256,7 @@ class OnBehalfInvoicingService:
             raise ValueError("Invoice must be dispatched before payment can be recorded")
         duplicate = (
             self.db.query(PaymentTransaction)
-            .filter_by(invoice_id=invoice.id, bank_wire_reference=bank_wire_reference)
+            .filter_by(bank_wire_reference=bank_wire_reference)
             .first()
         )
         if duplicate:
@@ -285,7 +314,7 @@ class OnBehalfInvoicingService:
                 actor=actor,
                 target_table="client_orders",
             )
-            receipt = self._issue_receipt(invoice, payment_date, bank_wire_reference, actor)
+            receipt = self._issue_receipt(invoice, payment_date, bank_wire_reference)
             WorkflowService(self.db).transition(
                 target=order,
                 to_status=OrderStatus.RECEIPTS_ISSUED,
@@ -293,7 +322,11 @@ class OnBehalfInvoicingService:
                 target_table="client_orders",
             )
 
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ValueError("Bank transaction reference has already been recorded") from exc
         return {
             "invoice_number": invoice.invoice_number,
             "total_due_eur": float(total_due),
@@ -310,12 +343,33 @@ class OnBehalfInvoicingService:
         invoice: Invoice,
         payment_date: str,
         bank_reference: str,
-        actor: User,
     ) -> Receipt:
         existing = self.db.query(Receipt).filter_by(invoice_id=invoice.id).first()
         if existing:
             return existing
         receipt_number = f"RCP-{payment_date.replace('-', '')}-{invoice.id[:8]}"
+        issuer = (
+            self.db.query(User)
+            .filter(
+                User.role == UserRole.AI_AGENT_1,
+                User.is_service_principal.is_(True),
+                User.is_active.is_(True),
+            )
+            .first()
+        )
+        if not issuer:
+            raise ValueError("AI Agent 1 service principal is required to issue receipts")
+        if not invoice.seller_customer or not invoice.seller_customer.tax_vat_id:
+            raise ValueError("Seller tax ID is required to issue an official receipt")
+        if not invoice.customer or not invoice.customer.tax_vat_id:
+            raise ValueError("Buyer tax ID is required to issue an official receipt")
+        payment_ledger = [
+            {
+                "bank_reference": transaction.bank_wire_reference,
+                "amount_eur": float(transaction.amount_paid_eur),
+            }
+            for transaction in invoice.transactions
+        ]
         payload = {
             "receipt_number": receipt_number,
             "invoice_id": invoice.id,
@@ -323,6 +377,9 @@ class OnBehalfInvoicingService:
             "customer_id": invoice.customer_id,
             "amount_received_eur": float(invoice.amount_paid_eur),
             "bank_reference": bank_reference,
+            "payment_ledger": payment_ledger,
+            "seller_tax_id": invoice.seller_customer.tax_vat_id,
+            "buyer_tax_id": invoice.customer.tax_vat_id,
         }
         receipt = Receipt(
             receipt_number=receipt_number,
@@ -338,13 +395,34 @@ class OnBehalfInvoicingService:
         self.db.flush()
         self._audit(
             "EVT_RECEIPT_ISSUED",
-            actor,
+            issuer,
             "receipts",
             receipt.id,
             before=None,
             after={**payload, "payload_sha256": receipt.payload_sha256},
         )
         return receipt
+
+    def _verified_handoff_02(self, order_id: str) -> AgentHandoff:
+        handoffs = (
+            self.db.query(AgentHandoff)
+            .filter(AgentHandoff.handoff_type == "HANDOFF_02_FINAL_PACKING")
+            .order_by(AgentHandoff.created_at.desc())
+            .all()
+        )
+        handoff = next(
+            (
+                candidate
+                for candidate in handoffs
+                if candidate.payload_json.get("final_packing_manifest_id") == order_id
+            ),
+            None,
+        )
+        if not handoff:
+            raise ValueError("A Handoff 02 contract is required before invoicing")
+        if _canonical_hash(handoff.payload_json) != handoff.payload_sha256:
+            raise ValueError("Handoff 02 integrity verification failed")
+        return handoff
 
     @staticmethod
     def _require_accounting(actor: User) -> None:

@@ -58,7 +58,7 @@ class InvoiceDetailOut(BaseModel):
 def generate_on_behalf_invoice(
     payload: GenerateOnBehalfRequest,
     db: Session = Depends(get_db),
-    actor: User = Depends(require_roles(UserRole.AI_AGENT_1, UserRole.SYSTEM_ADMIN)),
+    actor: User = Depends(require_roles(UserRole.AI_AGENT_1)),
 ):
     """
     On-Behalf Invoicing:
@@ -74,36 +74,7 @@ def generate_on_behalf_invoice(
             actor=actor,
         )
 
-        seller_name = inv.seller_customer.company_name if inv.seller_customer else "Main Customer"
-        buyer_name = inv.customer.company_name if inv.customer else "Sub-Customer"
-
-        item_list = [
-            InvoiceLineItemOut(
-                product_code=it.product.t_code if it.product else "",
-                product_name=f"{it.product.name_vi} / {it.product.name_en}" if it.product else "",
-                box_number=it.box_number,
-                pack_size=it.pack_size,
-                billed_packs=it.billed_pack_count,
-                billed_weight_kg=float(it.billed_weight_kg),
-                unit_price_eur=float(it.unit_price_eur),
-                line_total_eur=float(it.line_total_eur)
-            )
-            for it in inv.items
-        ]
-
-        return InvoiceDetailOut(
-            invoice_id=inv.id,
-            invoice_number=inv.invoice_number,
-            invoice_type=inv.invoice_type,
-            main_customer_seller=seller_name,
-            sub_customer_buyer=buyer_name,
-            subtotal_eur=float(inv.subtotal_eur),
-            total_amount_eur=float(inv.total_amount_eur),
-            amount_paid_eur=float(inv.amount_paid_eur or 0.0),
-            status=inv.status.value,
-            internal_notes=inv.internal_notes,
-            items=item_list
-        )
+        return _invoice_detail(inv)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -223,33 +194,35 @@ def get_receipt(
     }
 
 
-def _invoice_detail(inv: Invoice) -> InvoiceDetailOut:
-    seller_name = inv.seller_customer.company_name if inv.seller_customer else "Main Customer"
-    buyer_name = inv.customer.company_name if inv.customer else "Sub-Customer"
+def _invoice_detail(invoice: Invoice) -> InvoiceDetailOut:
+    seller_name = (
+        invoice.seller_customer.company_name if invoice.seller_customer else "Main Customer"
+    )
+    buyer_name = invoice.customer.company_name if invoice.customer else "Sub-Customer"
     item_list = [
         InvoiceLineItemOut(
-            product_code=it.product.t_code if it.product else "",
-            product_name=f"{it.product.name_vi} / {it.product.name_en}" if it.product else "",
-            box_number=it.box_number,
-            pack_size=it.pack_size,
-            billed_packs=it.billed_pack_count,
-            billed_weight_kg=float(it.billed_weight_kg),
-            unit_price_eur=float(it.unit_price_eur),
-            line_total_eur=float(it.line_total_eur)
+            product_code=item.product.t_code if item.product else "",
+            product_name=f"{item.product.name_vi} / {item.product.name_en}" if item.product else "",
+            box_number=item.box_number,
+            pack_size=item.pack_size,
+            billed_packs=item.billed_pack_count,
+            billed_weight_kg=float(item.billed_weight_kg),
+            unit_price_eur=float(item.unit_price_eur),
+            line_total_eur=float(item.line_total_eur)
         )
-        for it in inv.items
+        for item in invoice.items
     ]
 
     return InvoiceDetailOut(
-        invoice_id=inv.id,
-        invoice_number=inv.invoice_number,
-        invoice_type=inv.invoice_type,
+        invoice_id=invoice.id,
+        invoice_number=invoice.invoice_number,
+        invoice_type=invoice.invoice_type,
         main_customer_seller=seller_name,
         sub_customer_buyer=buyer_name,
-        subtotal_eur=float(inv.subtotal_eur),
-        total_amount_eur=float(inv.total_amount_eur),
-        amount_paid_eur=float(inv.amount_paid_eur or 0.0),
-        status=inv.status.value,
-        internal_notes=inv.internal_notes,
+        subtotal_eur=float(invoice.subtotal_eur),
+        total_amount_eur=float(invoice.total_amount_eur),
+        amount_paid_eur=float(invoice.amount_paid_eur or 0.0),
+        status=invoice.status.value,
+        internal_notes=invoice.internal_notes,
         items=item_list
     )

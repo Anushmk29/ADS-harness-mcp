@@ -1,6 +1,9 @@
+import hashlib
+import json
+
 import pytest
 
-from app.models.audit import AuditLog
+from app.models.audit import AgentHandoff, AuditLog
 from app.models.invoice import Invoice, InvoiceStatus, PaymentTransaction, Receipt
 from app.models.master_data import (
     BoxCatalogue,
@@ -21,10 +24,11 @@ from app.services.on_behalf_invoicing_service import OnBehalfInvoicingService
 
 def build_order_with_box(db_session, *, locked: bool):
     user = User(
-        email="admin@example.com",
+        email="agent1@example.com",
         password_hash="unused",
-        full_name="Admin",
-        role=UserRole.SYSTEM_ADMIN,
+        full_name="Agent One",
+        role=UserRole.AI_AGENT_1,
+        is_service_principal=True,
     )
     seller = Customer(
         client_code="TONIO",
@@ -32,6 +36,7 @@ def build_order_with_box(db_session, *, locked: bool):
         billing_email="seller@example.com",
         route_group="TETE",
         destination_country="France",
+        tax_vat_id="FR-SELLER-001",
         is_main_customer=True,
     )
     buyer = Customer(
@@ -40,6 +45,7 @@ def build_order_with_box(db_session, *, locked: bool):
         billing_email="buyer@example.com",
         route_group="TETE",
         destination_country="France",
+        tax_vat_id="FR-BUYER-001",
         parent_customer=seller,
     )
     product = Product(
@@ -115,13 +121,25 @@ def build_order_with_box(db_session, *, locked: bool):
             final_net_weight_kg=2.0,
         )
     )
+    if locked:
+        payload = {"final_packing_manifest_id": order.id, "boxes": [box.id]}
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        db_session.add(
+            AgentHandoff(
+                handoff_type="HANDOFF_02_FINAL_PACKING",
+                sender_agent="AI_AGENT_2",
+                recipient_agent="AI_AGENT_1",
+                payload_json=payload,
+                payload_sha256=hashlib.sha256(encoded.encode("utf-8")).hexdigest(),
+            )
+        )
     db_session.commit()
     return order
 
 
 def test_invoice_rejects_any_unlocked_packing_data(db_session):
     order = build_order_with_box(db_session, locked=False)
-    actor = db_session.query(User).filter_by(email="admin@example.com").one()
+    actor = db_session.query(User).filter_by(email="agent1@example.com").one()
 
     with pytest.raises(ValueError, match="locked final packing"):
         OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
@@ -134,7 +152,7 @@ def test_invoice_rejects_any_unlocked_packing_data(db_session):
 
 def test_invoice_uses_locked_final_packing_data(db_session):
     order = build_order_with_box(db_session, locked=True)
-    actor = db_session.query(User).filter_by(email="admin@example.com").one()
+    actor = db_session.query(User).filter_by(email="agent1@example.com").one()
 
     invoice = OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
         order.id,
@@ -144,12 +162,13 @@ def test_invoice_uses_locked_final_packing_data(db_session):
     assert len(invoice.items) == 1
     assert invoice.items[0].billed_pack_count == 2
     assert float(invoice.items[0].billed_weight_kg) == 2.0
+    assert invoice.final_packing_manifest_id == db_session.query(AgentHandoff).one().payload_sha256
     assert order.status == OrderStatus.INVOICES_DRAFTED
 
 
 def test_accounting_lifecycle_is_gated_audited_and_issues_receipt(db_session):
     order = build_order_with_box(db_session, locked=True)
-    admin = db_session.query(User).filter_by(email="admin@example.com").one()
+    agent = db_session.query(User).filter_by(email="agent1@example.com").one()
     accounting = User(
         email="accounting@example.com",
         password_hash="unused",
@@ -160,7 +179,7 @@ def test_accounting_lifecycle_is_gated_audited_and_issues_receipt(db_session):
     db_session.commit()
     service = OnBehalfInvoicingService(db_session)
 
-    invoice = service.generate_sub_customer_invoice(order.id, actor=admin)
+    invoice = service.generate_sub_customer_invoice(order.id, actor=agent)
     service.approve_and_dispatch(invoice_id=invoice.id, actor=accounting)
     partial = service.record_payment_and_issue_receipt(
         invoice_id=invoice.id,
@@ -189,6 +208,8 @@ def test_accounting_lifecycle_is_gated_audited_and_issues_receipt(db_session):
     assert db_session.query(PaymentTransaction).count() == 2
     receipt = db_session.query(Receipt).one()
     assert len(receipt.payload_sha256) == 64
+    receipt_event = db_session.query(AuditLog).filter_by(event_type="EVT_RECEIPT_ISSUED").one()
+    assert receipt_event.actor_role == UserRole.AI_AGENT_1.value
     assert {
         "EVT_INVOICE_DRAFTED",
         "EVT_INVOICE_DISPATCH",
@@ -199,17 +220,23 @@ def test_accounting_lifecycle_is_gated_audited_and_issues_receipt(db_session):
 
 def test_payment_requires_dispatched_invoice_and_accounting_role(db_session):
     order = build_order_with_box(db_session, locked=True)
-    admin = db_session.query(User).filter_by(email="admin@example.com").one()
+    agent = db_session.query(User).filter_by(email="agent1@example.com").one()
+    accounting = User(
+        email="accounting@example.com",
+        password_hash="unused",
+        full_name="Accounting Officer",
+        role=UserRole.ACCOUNTING_OFFICER,
+    )
     floor_user = User(
         email="floor@example.com",
         password_hash="unused",
         full_name="Floor User",
         role=UserRole.FLOOR_STAFF,
     )
-    db_session.add(floor_user)
+    db_session.add_all([accounting, floor_user])
     db_session.commit()
     service = OnBehalfInvoicingService(db_session)
-    invoice = service.generate_sub_customer_invoice(order.id, actor=admin)
+    invoice = service.generate_sub_customer_invoice(order.id, actor=agent)
 
     with pytest.raises(ValueError, match="dispatched"):
         service.record_payment_and_issue_receipt(
@@ -219,8 +246,22 @@ def test_payment_requires_dispatched_invoice_and_accounting_role(db_session):
             bank_name="Bangkok Bank",
             bank_wire_reference="WIRE-1",
             payment_mode="BANK_TRANSFER",
-            actor=admin,
+            actor=accounting,
         )
 
     with pytest.raises(PermissionError, match="Accounting"):
         service.approve_and_dispatch(invoice_id=invoice.id, actor=floor_user)
+
+
+def test_invoice_rejects_tampered_handoff_02(db_session):
+    order = build_order_with_box(db_session, locked=True)
+    actor = db_session.query(User).filter_by(email="agent1@example.com").one()
+    handoff = db_session.query(AgentHandoff).one()
+    handoff.payload_json = {**handoff.payload_json, "boxes": ["tampered"]}
+    db_session.commit()
+
+    with pytest.raises(ValueError, match="integrity verification"):
+        OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
+            order.id,
+            actor=actor,
+        )
