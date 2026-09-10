@@ -68,13 +68,13 @@ def generate_on_behalf_invoice(
     """
     service = OnBehalfInvoicingService(db)
     try:
-        inv = service.generate_sub_customer_invoice(
+        invoice = service.generate_sub_customer_invoice(
             client_order_id=payload.client_order_id,
             internal_notes=payload.internal_notes,
             actor=actor,
         )
 
-        return _invoice_detail(inv)
+        return _invoice_detail(invoice)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -144,16 +144,16 @@ def update_invoice_internal_notes(
     Private text field for administrators to privately track notes on invoices.
     Never exposed on client-facing export documents.
     """
-    inv = db.query(Invoice).filter(Invoice.id == invoice_id).first()
-    if not inv:
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    inv.internal_notes = payload.internal_notes
+    invoice.internal_notes = payload.internal_notes
     db.commit()
     return {
         "message": "Internal notes updated successfully",
-        "invoice_number": inv.invoice_number,
-        "internal_notes": inv.internal_notes
+        "invoice_number": invoice.invoice_number,
+        "internal_notes": invoice.internal_notes
     }
 
 @router.get("/{invoice_id}", response_model=InvoiceDetailOut)
@@ -164,11 +164,11 @@ def get_invoice_detail(
         require_roles(UserRole.ACCOUNTING_OFFICER, UserRole.SYSTEM_ADMIN)
     ),
 ):
-    inv = db.query(Invoice).filter(Invoice.id == invoice_id).first()
-    if not inv:
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    return _invoice_detail(inv)
+    return _invoice_detail(invoice)
 
 
 @router.get("/{invoice_id}/receipt")

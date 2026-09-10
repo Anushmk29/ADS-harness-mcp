@@ -26,6 +26,7 @@ export default function BillingPage() {
   const [amount, setAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
   const [bankReference, setBankReference] = useState("");
+  const [paymentMode, setPaymentMode] = useState("BANK_TRANSFER");
   const [invoice, setInvoice] = useState<Invoice>();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -76,7 +77,7 @@ export default function BillingPage() {
             payment_date: paymentDate,
             bank_name: "Bank transfer",
             bank_wire_reference: bankReference,
-            payment_mode: "BANK_TRANSFER",
+            payment_mode: paymentMode,
           }),
         },
       );
@@ -115,6 +116,7 @@ export default function BillingPage() {
             <label>Payment date<input type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} required /></label>
             <label>Bank reference<input value={bankReference} onChange={(event) => setBankReference(event.target.value)} required /></label>
           </div>
+          <label>Payment mode<select value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}><option value="BANK_TRANSFER">Bank transfer</option><option value="CREDIT_LETTER">Credit letter</option><option value="CASH">Cash</option></select></label>
           <button className="primary-button">Record cleared funds</button>
         </form>
       </section>

@@ -93,6 +93,7 @@ class OnBehalfInvoicingService:
                 PriceList.valid_from <= as_of_date,
                 or_(PriceList.valid_to.is_(None), PriceList.valid_to >= as_of_date),
             )
+            .order_by(PriceList.valid_from.desc())
             .all()
         )
         price_entry = next(
@@ -130,6 +131,7 @@ class OnBehalfInvoicingService:
             raise ValueError(f"Order {client_order_id} does not have locked final packing")
 
         handoff = self._verified_handoff_02(order.id)
+        self._assert_packing_matches_handoff(boxes, handoff)
 
         shipment_date = order.raw_file.shipment_target_date
         date_str = shipment_date.replace("-", "")
@@ -139,9 +141,7 @@ class OnBehalfInvoicingService:
         if invoice and invoice.status != InvoiceStatus.INVOICE_DRAFT:
             raise ValueError("A dispatched invoice is immutable and cannot be regenerated")
         if invoice:
-            self.db.query(InvoiceLineItem).filter(InvoiceLineItem.invoice_id == invoice.id).delete()
-            if internal_notes is not None:
-                invoice.internal_notes = internal_notes
+            return invoice
         else:
             invoice = Invoice(
                 invoice_number=invoice_number,
@@ -228,7 +228,13 @@ class OnBehalfInvoicingService:
             "invoices",
             invoice.id,
             before={"status": InvoiceStatus.INVOICE_DRAFT.value},
-            after={"status": InvoiceStatus.INVOICE_SENT.value},
+            after={
+                "status": InvoiceStatus.INVOICE_SENT.value,
+                "invoice_number": invoice.invoice_number,
+                "total_eur": float(invoice.total_amount_eur),
+                "recipient_customer_id": invoice.customer_id,
+                "recipient_email": invoice.customer.billing_email,
+            },
         )
         self.db.commit()
         self.db.refresh(invoice)
@@ -423,6 +429,52 @@ class OnBehalfInvoicingService:
         if _canonical_hash(handoff.payload_json) != handoff.payload_sha256:
             raise ValueError("Handoff 02 integrity verification failed")
         return handoff
+
+    @staticmethod
+    def _assert_packing_matches_handoff(
+        boxes: list[Box],
+        handoff: AgentHandoff,
+    ) -> None:
+        signed_boxes = {
+            signed_box["box_uuid"]: signed_box
+            for signed_box in handoff.payload_json.get("boxes", [])
+        }
+        if {box.id for box in boxes} != set(signed_boxes):
+            raise ValueError("Current packing records do not match signed Handoff 02")
+        for box in boxes:
+            signed_box = signed_boxes[box.id]
+            current_header = (
+                box.box_number,
+                round(float(box.actual_gross_weight_kg), 2),
+                round(float(box.actual_net_weight_kg), 2),
+            )
+            signed_header = (
+                signed_box["box_number"],
+                round(float(signed_box["actual_gross_weight_kg"]), 2),
+                round(float(signed_box["actual_net_weight_kg"]), 2),
+            )
+            if current_header != signed_header:
+                raise ValueError("Current packing records do not match signed Handoff 02")
+            current_items = sorted(
+                (
+                    item.product_id,
+                    item.pack_size,
+                    item.final_packed_count,
+                    round(float(item.final_net_weight_kg), 2),
+                )
+                for item in box.items
+            )
+            signed_items = sorted(
+                (
+                    item["product_id"],
+                    item["pack_size"],
+                    item["final_pack_count"],
+                    round(float(item["final_net_weight_kg"]), 2),
+                )
+                for item in signed_box.get("items", [])
+            )
+            if current_items != signed_items:
+                raise ValueError("Current packing records do not match signed Handoff 02")
 
     @staticmethod
     def _require_accounting(actor: User) -> None:

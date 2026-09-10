@@ -122,7 +122,25 @@ def build_order_with_box(db_session, *, locked: bool):
         )
     )
     if locked:
-        payload = {"final_packing_manifest_id": order.id, "boxes": [box.id]}
+        payload = {
+            "final_packing_manifest_id": order.id,
+            "boxes": [
+                {
+                    "box_uuid": box.id,
+                    "box_number": box.box_number,
+                    "actual_gross_weight_kg": float(box.actual_gross_weight_kg),
+                    "actual_net_weight_kg": float(box.actual_net_weight_kg),
+                    "items": [
+                        {
+                            "product_id": product.id,
+                            "pack_size": "1kg",
+                            "final_pack_count": 2,
+                            "final_net_weight_kg": 2.0,
+                        }
+                    ],
+                }
+            ],
+        }
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         db_session.add(
             AgentHandoff(
@@ -261,6 +279,20 @@ def test_invoice_rejects_tampered_handoff_02(db_session):
     db_session.commit()
 
     with pytest.raises(ValueError, match="integrity verification"):
+        OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
+            order.id,
+            actor=actor,
+        )
+
+
+def test_invoice_rejects_live_packing_that_differs_from_signed_handoff(db_session):
+    order = build_order_with_box(db_session, locked=True)
+    actor = db_session.query(User).filter_by(email="agent1@example.com").one()
+    box = db_session.query(Box).one()
+    box.actual_net_weight_kg = 1.5
+    db_session.commit()
+
+    with pytest.raises(ValueError, match="do not match signed Handoff 02"):
         OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
             order.id,
             actor=actor,
