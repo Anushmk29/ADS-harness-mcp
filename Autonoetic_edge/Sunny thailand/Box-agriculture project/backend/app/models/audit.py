@@ -1,10 +1,13 @@
 import uuid
-from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, JSON
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
+
 from app.core.database import Base
 
+
 class AuditLog(Base):
-    __tablename__ = 'audit_logs'
+    __tablename__ = "audit_logs"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     event_type = Column(String(64), nullable=False, index=True)
@@ -15,17 +18,20 @@ class AuditLog(Base):
     before_state = Column(JSON, nullable=True)
     after_state = Column(JSON, nullable=True)
     ip_address = Column(String(45), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
 
 class AgentHandoff(Base):
-    __tablename__ = 'agent_handoffs'
+    __tablename__ = "agent_handoffs"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    handoff_type = Column(String(32), nullable=False, index=True) # 'HANDOFF_01_ORDER_DATA' | 'HANDOFF_02_FINAL_PACKING'
+    handoff_type = Column(
+        String(32), nullable=False, index=True
+    )  # 'HANDOFF_01_ORDER_DATA' | 'HANDOFF_02_FINAL_PACKING'
     sender_agent = Column(String(32), nullable=False)
     recipient_agent = Column(String(32), nullable=False)
     payload_json = Column(JSON, nullable=False)
     payload_sha256 = Column(String(64), nullable=False)
     is_acknowledged = Column(Boolean, default=False)
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

@@ -18,8 +18,8 @@ from app.models.packing import Box
 from app.models.user import User, UserRole
 from app.modules.workflow.service import WorkflowService
 
-FINANCIAL_ROLES = {UserRole.ACCOUNTING_OFFICER, UserRole.SYSTEM_ADMIN}
-DRAFT_ROLES = {UserRole.AI_AGENT_1}
+FINANCIAL_ROLES = {UserRole.ACCOUNTING_OFFICER, UserRole.SYSTEM_ADMIN, UserRole.STAFF, UserRole.OPERATIONS_MANAGER}
+DRAFT_ROLES = {UserRole.AI_AGENT_1, UserRole.SYSTEM_ADMIN, UserRole.STAFF, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTING_OFFICER}
 
 
 def _money(value: float | Decimal) -> Decimal:
@@ -271,6 +271,11 @@ class OnBehalfInvoicingService:
         total_due = _money(invoice.total_amount_eur)
         paid_now = _money(amount_paid)
         previous_paid = _money(invoice.amount_paid_eur or 0)
+        outstanding_balance = total_due - previous_paid
+        if paid_now > outstanding_balance:
+            raise ValueError(
+                f"Payment amount exceeds the outstanding balance of {outstanding_balance} EUR"
+            )
         new_total_paid = previous_paid + paid_now
         rolling_balance = max(Decimal("0.00"), total_due - new_total_paid)
         previous_status = invoice.status
@@ -292,9 +297,7 @@ class OnBehalfInvoicingService:
         invoice.payment_cleared_by = actor.id
         invoice.payment_cleared_at = datetime.now(UTC)
         invoice.status = (
-            InvoiceStatus.CONFIRMED_PAID
-            if rolling_balance == 0
-            else InvoiceStatus.PARTIALLY_PAID
+            InvoiceStatus.CONFIRMED_PAID if rolling_balance == 0 else InvoiceStatus.PARTIALLY_PAID
         )
         self._audit(
             "EVT_PAYMENT_CONFIRMED",
@@ -408,6 +411,32 @@ class OnBehalfInvoicingService:
             after={**payload, "payload_sha256": receipt.payload_sha256},
         )
         return receipt
+
+    def close_paid_order(self, *, invoice_id: str, actor: User) -> ClientOrder:
+        """Close a financially settled order after verifying its receipt invariant."""
+        self._require_accounting(actor)
+        invoice = self.db.query(Invoice).filter_by(id=invoice_id).with_for_update().first()
+        if not invoice:
+            raise ValueError(f"Invoice {invoice_id} not found")
+        if invoice.status != InvoiceStatus.CONFIRMED_PAID:
+            raise ValueError("Only a fully paid invoice can close an order")
+        receipt = self.db.query(Receipt).filter_by(invoice_id=invoice.id).first()
+        if not receipt or not receipt.payload_sha256:
+            raise ValueError("A signed receipt is required before order closure")
+        order = (
+            self.db.query(ClientOrder).filter_by(id=invoice.client_order_id).with_for_update().one()
+        )
+        if order.status != OrderStatus.RECEIPTS_ISSUED:
+            raise ValueError("Order must have an issued receipt before closure")
+        WorkflowService(self.db).transition(
+            target=order,
+            to_status=OrderStatus.ORDER_CLOSED,
+            actor=actor,
+            target_table="client_orders",
+        )
+        self.db.commit()
+        self.db.refresh(order)
+        return order
 
     def _verified_handoff_02(self, order_id: str) -> AgentHandoff:
         handoffs = (

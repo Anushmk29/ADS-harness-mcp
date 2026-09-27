@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from app.models.audit import AgentHandoff, AuditLog
 from app.models.master_data import (
     BoxMaterial,
@@ -13,6 +16,7 @@ from app.models.procurement import MasterPurchasingList, PurchasingItem, Purchas
 from app.models.user import User, UserRole
 from app.modules.handoffs.service import HandoffService
 from app.modules.procurement.service import ProcurementConfirmation, ProcurementConfirmationService
+from app.services.purchasing_aggregator import PurchasingAggregator
 
 
 def setup_procurement_batch(db_session):
@@ -148,3 +152,84 @@ def test_handoff_01_is_canonical_hashed_and_advances_orders(db_session):
     assert float(order.items[0].confirmed_net_weight_kg) == 8.0
     assert order.status == OrderStatus.HANDOFF_01_SENT
     assert db_session.query(AgentHandoff).count() == 1
+
+    handoff_id = handoff.id
+    db_session.expire_all()
+    persisted = db_session.query(AgentHandoff).filter_by(id=handoff_id).one()
+    encoded = json.dumps(
+        persisted.payload_json,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    assert persisted.payload_json["handoff_id"] == handoff_id
+    assert hashlib.sha256(encoded.encode("utf-8")).hexdigest() == persisted.payload_sha256
+
+
+def test_consolidation_advances_every_source_order(db_session):
+    buyer, agent, order, _, _ = setup_procurement_batch(db_session)
+    del buyer, agent
+    order.status = OrderStatus.SPLIT_AND_VALIDATED
+    order.raw_file.status = OrderStatus.SPLIT_AND_VALIDATED
+    db_session.query(MasterPurchasingList).delete()
+    db_session.query(PurchasingOrderSource).delete()
+    db_session.query(PurchasingItem).delete()
+    db_session.commit()
+
+    batch = PurchasingAggregator(db_session).consolidate_demand(order.raw_order_file_id)
+
+    assert batch.status == OrderStatus.PURCHASING_CONSOLIDATED
+    assert order.raw_file.status == OrderStatus.PURCHASING_CONSOLIDATED
+    assert order.status == OrderStatus.PURCHASING_CONSOLIDATED
+
+
+def test_handoff_01_ignores_zero_quantity_order_rows(db_session):
+    buyer, agent, order, batch, item = setup_procurement_batch(db_session)
+    zero_product = Product(
+        t_code="T-ZERO",
+        name_vi="Không đặt",
+        name_en="Zero quantity",
+        name_th="ไม่มี",
+        box_material=BoxMaterial.FOAM,
+        temperature=TemperatureZone.COLD,
+        control_status=ControlStatus.COMBINABLE,
+        produce_type=ProduceType.HERB,
+        weight_class=WeightClass.LIGHT,
+        default_pack_sizes=["100g"],
+    )
+    db_session.add(zero_product)
+    db_session.flush()
+    db_session.add(
+        ClientOrderItem(
+            client_order_id=order.id,
+            product_id=zero_product.id,
+            raw_produce_text="T-ZERO - Zero quantity",
+            pack_size="100g",
+            ordered_pack_count=0,
+            estimated_net_weight_kg=0,
+        )
+    )
+    zero_purchase = PurchasingItem(
+        purchasing_list_id=batch.id,
+        product_id=zero_product.id,
+        pack_size="100g",
+        ordered_net_weight_kg=0,
+        total_required_pack_count=0,
+        total_required_weight_kg=0,
+    )
+    db_session.add(zero_purchase)
+    db_session.commit()
+
+    ProcurementConfirmationService(db_session).confirm_batch(
+        batch_id=batch.id,
+        confirmations=[
+            ProcurementConfirmation(item.id, 8, 8.0, "Market shortage"),
+            ProcurementConfirmation(zero_purchase.id, 0, 0.0),
+        ],
+        actor=buyer,
+    )
+
+    handoff = HandoffService(db_session).dispatch_handoff_01(batch_id=batch.id, actor=agent)
+
+    signed_items = handoff.payload_json["confirmed_orders"][0]["items"]
+    assert all(signed_item["product_code"] != "T-ZERO" for signed_item in signed_items)

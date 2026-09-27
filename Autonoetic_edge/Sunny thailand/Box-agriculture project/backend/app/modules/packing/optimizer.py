@@ -106,8 +106,7 @@ class DeterministicPackingOptimizer:
         if not options:
             raise ValueError("At least one active box option is required")
         if any(
-            d.pack_count < 1 or d.unit_weight_kg <= 0 or d.unit_volume_cm3 <= 0
-            for d in demands
+            d.pack_count < 1 or d.unit_weight_kg <= 0 or d.unit_volume_cm3 <= 0 for d in demands
         ):
             raise ValueError("Packing demand counts, weights, and volumes must be positive")
 

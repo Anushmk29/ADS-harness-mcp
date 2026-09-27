@@ -7,7 +7,6 @@ from app.core.dependencies import require_roles
 from app.models.user import User, UserRole
 from app.modules.handoffs.service import HandoffService
 
-
 router = APIRouter(prefix="/agents", tags=["Agent handoff contracts"])
 
 

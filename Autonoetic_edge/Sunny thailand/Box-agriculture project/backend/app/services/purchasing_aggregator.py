@@ -1,10 +1,14 @@
+import hashlib
 import math
-from typing import Dict, Any, List, Optional
-from sqlalchemy.orm import Session
+from typing import Any
+
 from sqlalchemy import func
-from app.models.order import RawOrderFile, ClientOrder, ClientOrderItem, OrderStatus
+from sqlalchemy.orm import Session
+
 from app.models.master_data import Product
+from app.models.order import ClientOrder, ClientOrderItem, OrderStatus, RawOrderFile
 from app.models.procurement import MasterPurchasingList, PurchasingItem, PurchasingOrderSource
+
 
 class PurchasingAggregator:
     def __init__(self, db: Session):
@@ -19,32 +23,78 @@ class PurchasingAggregator:
         return self.combine_and_consolidate(
             raw_file_ids=[raw_file.id],
             shipment_date=raw_file.shipment_target_date,
-            batch_ref=f"PUR-{raw_file.shipment_target_date.replace('-', '')}-BATCH1"
+            batch_ref=f"PUR-{raw_file.shipment_target_date.replace('-', '')}-BATCH1",
         )
 
     def combine_and_consolidate(
         self,
-        raw_file_ids: List[str],
-        client_order_ids: Optional[List[str]] = None,
-        batch_ref: Optional[str] = None,
-        shipment_date: Optional[str] = None,
-        route_code: Optional[str] = None
+        raw_file_ids: list[str],
+        client_order_ids: list[str] | None = None,
+        batch_ref: str | None = None,
+        shipment_date: str | None = None,
+        route_code: str | None = None,
     ) -> MasterPurchasingList:
         """
         Multi-Order Combination Merge Tool:
         Combines multiple main customer orders or raw files into a single unified Master Purchase Order.
         Applies sticky buffer percentages per product to compensate for harvest/sorting waste.
         """
+        raw_file_ids = list(dict.fromkeys(raw_file_ids))
+        client_order_ids = list(dict.fromkeys(client_order_ids or []))
+        if not raw_file_ids and not client_order_ids:
+            raise ValueError("At least one raw order file or client order is required")
+
+        if raw_file_ids:
+            existing_raw_ids = {
+                row[0]
+                for row in self.db.query(RawOrderFile.id)
+                .filter(RawOrderFile.id.in_(raw_file_ids))
+                .all()
+            }
+            missing_raw_ids = [
+                source_id for source_id in raw_file_ids if source_id not in existing_raw_ids
+            ]
+            if missing_raw_ids:
+                raise ValueError(f"Raw order files not found: {', '.join(missing_raw_ids)}")
+
+        if client_order_ids:
+            existing_order_ids = {
+                row[0]
+                for row in self.db.query(ClientOrder.id)
+                .filter(ClientOrder.id.in_(client_order_ids))
+                .all()
+            }
+            missing_order_ids = [
+                source_id for source_id in client_order_ids if source_id not in existing_order_ids
+            ]
+            if missing_order_ids:
+                raise ValueError(f"Client orders not found: {', '.join(missing_order_ids)}")
+
         if not batch_ref:
             date_str = shipment_date.replace("-", "") if shipment_date else "BATCH"
-            batch_ref = f"PUR-{date_str}-COMBINED-{len(raw_file_ids)}FILES"
+            source_key = "|".join(
+                sorted(
+                    [*(f"raw:{source_id}" for source_id in raw_file_ids)]
+                    + [*(f"order:{source_id}" for source_id in client_order_ids)]
+                )
+            )
+            source_fingerprint = hashlib.sha256(source_key.encode("utf-8")).hexdigest()[:10]
+            batch_ref = f"PUR-{date_str}-COMBINED-{source_fingerprint.upper()}"
 
         # Check existing
-        existing_mpl = self.db.query(MasterPurchasingList).filter(MasterPurchasingList.batch_reference == batch_ref).first()
+        existing_mpl = (
+            self.db.query(MasterPurchasingList)
+            .filter(MasterPurchasingList.batch_reference == batch_ref)
+            .first()
+        )
         if existing_mpl:
             mpl = existing_mpl
-            self.db.query(PurchasingItem).filter(PurchasingItem.purchasing_list_id == mpl.id).delete()
-            self.db.query(PurchasingOrderSource).filter(PurchasingOrderSource.purchasing_list_id == mpl.id).delete()
+            self.db.query(PurchasingItem).filter(
+                PurchasingItem.purchasing_list_id == mpl.id
+            ).delete()
+            self.db.query(PurchasingOrderSource).filter(
+                PurchasingOrderSource.purchasing_list_id == mpl.id
+            ).delete()
         else:
             mpl = MasterPurchasingList(
                 raw_order_file_id=raw_file_ids[0] if raw_file_ids else None,
@@ -52,41 +102,33 @@ class PurchasingAggregator:
                 shipment_date=shipment_date,
                 route_code=route_code,
                 total_skus_count=0,
-                status=OrderStatus.PURCHASING_CONSOLIDATED
+                status=OrderStatus.PURCHASING_CONSOLIDATED,
             )
             self.db.add(mpl)
             self.db.flush()
 
         # Link order sources
         for r_id in raw_file_ids:
-            source = PurchasingOrderSource(
-                purchasing_list_id=mpl.id,
-                raw_order_file_id=r_id
-            )
+            source = PurchasingOrderSource(purchasing_list_id=mpl.id, raw_order_file_id=r_id)
             self.db.add(source)
 
         if client_order_ids:
             for c_id in client_order_ids:
-                source = PurchasingOrderSource(
-                    purchasing_list_id=mpl.id,
-                    client_order_id=c_id
-                )
+                source = PurchasingOrderSource(purchasing_list_id=mpl.id, client_order_id=c_id)
                 self.db.add(source)
 
         # Build demand aggregation query
-        query = (
-            self.db.query(
-                ClientOrderItem.product_id,
-                ClientOrderItem.pack_size,
-                func.sum(ClientOrderItem.ordered_pack_count).label("total_packs"),
-                func.sum(ClientOrderItem.estimated_net_weight_kg).label("total_weight")
-            )
-            .join(ClientOrder, ClientOrderItem.client_order_id == ClientOrder.id)
-        )
+        query = self.db.query(
+            ClientOrderItem.product_id,
+            ClientOrderItem.pack_size,
+            func.sum(ClientOrderItem.ordered_pack_count).label("total_packs"),
+            func.sum(ClientOrderItem.estimated_net_weight_kg).label("total_weight"),
+        ).join(ClientOrder, ClientOrderItem.client_order_id == ClientOrder.id)
 
         if raw_file_ids and client_order_ids:
             query = query.filter(
-                (ClientOrder.raw_order_file_id.in_(raw_file_ids)) | (ClientOrder.id.in_(client_order_ids))
+                (ClientOrder.raw_order_file_id.in_(raw_file_ids))
+                | (ClientOrder.id.in_(client_order_ids))
             )
         elif raw_file_ids:
             query = query.filter(ClientOrder.raw_order_file_id.in_(raw_file_ids))
@@ -116,7 +158,7 @@ class PurchasingAggregator:
                 total_required_pack_count=total_purchasing_packs,
                 total_required_weight_kg=total_purchasing_kg,
                 confirmed_purchased_pack_count=total_purchasing_packs,
-                confirmed_purchased_weight_kg=total_purchasing_kg
+                confirmed_purchased_weight_kg=total_purchasing_kg,
             )
             self.db.add(p_item)
             sku_count += 1
@@ -126,6 +168,14 @@ class PurchasingAggregator:
             rf = self.db.query(RawOrderFile).filter(RawOrderFile.id == r_id).first()
             if rf:
                 rf.status = OrderStatus.PURCHASING_CONSOLIDATED
+                for order in rf.client_orders:
+                    order.status = OrderStatus.PURCHASING_CONSOLIDATED
+
+        if client_order_ids:
+            for order in (
+                self.db.query(ClientOrder).filter(ClientOrder.id.in_(client_order_ids)).all()
+            ):
+                order.status = OrderStatus.PURCHASING_CONSOLIDATED
 
         self.db.commit()
         return mpl
@@ -134,9 +184,9 @@ class PurchasingAggregator:
         self,
         product_id: str,
         new_buffer_pct: float,
-        purchasing_item_id: Optional[str] = None,
-        save_as_default: bool = True
-    ) -> Dict[str, Any]:
+        purchasing_item_id: str | None = None,
+        save_as_default: bool = True,
+    ) -> dict[str, Any]:
         """
         Updates buffer percentage. If save_as_default is True, updates Product master
         so the system remembers and defaults to this buffer for future identical orders.
@@ -150,19 +200,39 @@ class PurchasingAggregator:
 
         item_result = None
         if purchasing_item_id:
-            item = self.db.query(PurchasingItem).filter(PurchasingItem.id == purchasing_item_id).first()
+            item = (
+                self.db.query(PurchasingItem)
+                .filter(PurchasingItem.id == purchasing_item_id)
+                .first()
+            )
             if item:
                 item.buffer_percentage = round(new_buffer_pct, 2)
-                item.buffer_weight_kg = round(float(item.ordered_net_weight_kg) * (new_buffer_pct / 100.0), 2)
-                item.total_required_weight_kg = round(float(item.ordered_net_weight_kg) + float(item.buffer_weight_kg), 2)
-                item.total_required_pack_count = math.ceil(
-                    (float(item.ordered_net_weight_kg) / max(0.01, float(item.ordered_net_weight_kg) / max(1, item.total_required_pack_count))) * (1 + new_buffer_pct / 100.0)
-                ) if item.total_required_pack_count > 0 else 0
+                item.buffer_weight_kg = round(
+                    float(item.ordered_net_weight_kg) * (new_buffer_pct / 100.0), 2
+                )
+                item.total_required_weight_kg = round(
+                    float(item.ordered_net_weight_kg) + float(item.buffer_weight_kg), 2
+                )
+                item.total_required_pack_count = (
+                    math.ceil(
+                        (
+                            float(item.ordered_net_weight_kg)
+                            / max(
+                                0.01,
+                                float(item.ordered_net_weight_kg)
+                                / max(1, item.total_required_pack_count),
+                            )
+                        )
+                        * (1 + new_buffer_pct / 100.0)
+                    )
+                    if item.total_required_pack_count > 0
+                    else 0
+                )
                 item_result = {
                     "item_id": item.id,
                     "buffer_percentage": float(item.buffer_percentage),
                     "buffer_weight_kg": float(item.buffer_weight_kg),
-                    "total_required_weight_kg": float(item.total_required_weight_kg)
+                    "total_required_weight_kg": float(item.total_required_weight_kg),
                 }
 
         self.db.commit()
@@ -170,5 +240,5 @@ class PurchasingAggregator:
             "product_id": product.id,
             "product_name": f"{product.name_vi} / {product.name_en}",
             "default_buffer_percentage": float(product.default_buffer_percentage),
-            "updated_item": item_result
+            "updated_item": item_result,
         }

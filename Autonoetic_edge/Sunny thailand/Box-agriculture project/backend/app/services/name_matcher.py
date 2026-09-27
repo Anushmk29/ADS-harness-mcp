@@ -1,7 +1,9 @@
 import difflib
-from typing import Optional, Tuple
+
 from sqlalchemy.orm import Session
-from app.models.master_data import Product, ClientSkuMapping
+
+from app.models.master_data import ClientSkuMapping, ControlStatus, Product
+
 
 class NameFirstMatcher:
     def __init__(self, db: Session):
@@ -13,16 +15,46 @@ class NameFirstMatcher:
         self.exact_th = {}
         self.exact_code = {}
         for p in self.products:
-            if p.name_vi: self.exact_vi[p.name_vi.strip().lower()] = p
-            if p.name_en: self.exact_en[p.name_en.strip().lower()] = p
-            if p.name_th: self.exact_th[p.name_th.strip().lower()] = p
-            if p.t_code: self.exact_code[p.t_code.strip().upper()] = p
-            if p.numeric_code: self.exact_code[p.numeric_code.strip()] = p
+            if p.name_vi:
+                self.exact_vi[p.name_vi.strip().lower()] = p
+            if p.name_en:
+                self.exact_en[p.name_en.strip().lower()] = p
+            if p.name_th:
+                self.exact_th[p.name_th.strip().lower()] = p
+            if p.t_code:
+                self.exact_code[p.t_code.strip().upper()] = p
+            if p.numeric_code:
+                self.exact_code[p.numeric_code.strip()] = p
+            if p.barcode:
+                self.exact_code[p.barcode.strip()] = p
+            if p.norway_code:
+                self.exact_code[p.norway_code.strip().upper()] = p
+            # Support EL-prefixed lookup e.g. EL010 for 11-010
+            is_el = (
+                (p.control_status == ControlStatus.EL)
+                if hasattr(p, "control_status") and p.control_status
+                else False
+            )
+            if is_el and p.numeric_code:
+                clean_num = (
+                    p.numeric_code.replace("11", "", 1)
+                    if p.numeric_code.startswith("11")
+                    else p.numeric_code
+                )
+                self.exact_code[f"EL{clean_num}".upper()] = p
+                self.exact_code[f"EL-{clean_num}".upper()] = p
+
+            # Support 4-digit shorthand for 5-digit code e.g. 1109 for 11-009 (11009)
+            if p.numeric_code and len(p.numeric_code) == 5 and p.numeric_code[2] == "0":
+                shorthand = p.numeric_code[:2] + p.numeric_code[3:]
+                self.exact_code[shorthand.upper()] = p
 
         # Load pre-fed standardized client SKU mappings
-        self.client_sku_by_code = {} # (main_cust_id or 'GLOBAL', code) -> Product
-        self.client_sku_by_name = {} # (main_cust_id or 'GLOBAL', name) -> Product
-        all_mappings = db.query(ClientSkuMapping).filter(ClientSkuMapping.is_verified == True).all()
+        self.client_sku_by_code = {}  # (main_cust_id or 'GLOBAL', code) -> Product
+        self.client_sku_by_name = {}  # (main_cust_id or 'GLOBAL', name) -> Product
+        all_mappings = (
+            db.query(ClientSkuMapping).filter(ClientSkuMapping.is_verified.is_(True)).all()
+        )
         for m in all_mappings:
             cust_key = m.main_customer_id or "GLOBAL"
             if m.client_sku_code:
@@ -46,15 +78,18 @@ class NameFirstMatcher:
             "white round eggplant": "cà sọc",
             "small green eggplant": "cà nút áo",
             "thai banana": "gối chuối",
+            "cải ngọt": "chinese cabbage",
+            "pak kwan tung": "chinese cabbage",
+            "kwan tung": "chinese cabbage",
         }
 
     def resolve_product(
         self,
         raw_name: str,
-        raw_code: Optional[str] = None,
-        language_hint: Optional[str] = None,
-        main_customer_id: Optional[str] = None
-    ) -> Tuple[Optional[Product], str, float]:
+        raw_code: str | None = None,
+        language_hint: str | None = None,
+        main_customer_id: str | None = None,
+    ) -> tuple[Product | None, str, float]:
         """
         6-Tier SKU Standardization Hierarchy
         Tier 0: Pre-Fed Standardized Client SKU Database (Client-specific & Global)
@@ -124,13 +159,40 @@ class NameFirstMatcher:
 
         return None, "UNRESOLVED", 0.0
 
+    def resolve_product_names(
+        self,
+        raw_names: list[str | None],
+        *,
+        raw_code: str | None = None,
+        main_customer_id: str | None = None,
+    ) -> tuple[Product | None, str, float]:
+        """Resolve a product using every supplied language name before giving up."""
+        seen: set[str] = set()
+        for raw_name in raw_names:
+            clean = (raw_name or "").strip()
+            if not clean or clean.casefold() in seen:
+                continue
+            seen.add(clean.casefold())
+            product, tier, confidence = self.resolve_product(
+                raw_name=clean,
+                raw_code=raw_code,
+                main_customer_id=main_customer_id,
+            )
+            if product:
+                return product, tier, confidence
+        return self.resolve_product(
+            raw_name="",
+            raw_code=raw_code,
+            main_customer_id=main_customer_id,
+        )
+
     def add_sku_mapping(
         self,
         product_id: str,
         client_raw_name: str,
-        client_sku_code: Optional[str] = None,
-        main_customer_id: Optional[str] = None,
-        pack_size: Optional[str] = None
+        client_sku_code: str | None = None,
+        main_customer_id: str | None = None,
+        pack_size: str | None = None,
     ) -> ClientSkuMapping:
         """Saves a verified client mapping into the standardized SKU database for future persistence."""
         mapping = ClientSkuMapping(
@@ -139,7 +201,7 @@ class NameFirstMatcher:
             client_raw_name=client_raw_name.strip(),
             product_id=product_id,
             standard_pack_size=pack_size,
-            is_verified=True
+            is_verified=True,
         )
         self.db.add(mapping)
         self.db.commit()

@@ -21,8 +21,7 @@ def upgrade() -> None:
     if "payload_sha256" not in _columns("receipts"):
         op.add_column("receipts", sa.Column("payload_sha256", sa.String(64)))
     indexes = {
-        index["name"]
-        for index in sa.inspect(op.get_bind()).get_indexes("payment_transactions")
+        index["name"] for index in sa.inspect(op.get_bind()).get_indexes("payment_transactions")
     }
     if "ix_payment_transactions_bank_wire_reference" not in indexes:
         op.create_index(
@@ -35,8 +34,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     indexes = {
-        index["name"]
-        for index in sa.inspect(op.get_bind()).get_indexes("payment_transactions")
+        index["name"] for index in sa.inspect(op.get_bind()).get_indexes("payment_transactions")
     }
     if "ix_payment_transactions_bank_wire_reference" in indexes:
         op.drop_index(

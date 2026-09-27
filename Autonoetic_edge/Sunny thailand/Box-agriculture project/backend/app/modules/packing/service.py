@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.models.audit import AuditLog
 from app.models.master_data import BoxCatalogue
 from app.models.order import ClientOrder, OrderStatus
 from app.models.packing import Box, BoxItem
@@ -24,7 +26,7 @@ class PackingPlanningService:
         self.db = db
 
     def design_order(self, *, order_id: str, actor: User) -> list[Box]:
-        if actor.role not in {UserRole.AI_AGENT_2, UserRole.SYSTEM_ADMIN}:
+        if actor.role not in {UserRole.AI_AGENT_2, UserRole.SYSTEM_ADMIN, UserRole.STAFF}:
             raise PermissionError("Packing design must be executed by Agent 2")
         order = self.db.query(ClientOrder).filter_by(id=order_id).first()
         if not order:
@@ -77,14 +79,23 @@ class PackingPlanningService:
                 )
             )
 
+        route_code = (
+            order.customer.route_group
+            if order.customer and order.customer.route_group
+            else order.raw_file.route_line
+        )
         plan = DeterministicPackingOptimizer().solve(
             demands=demands,
             options=options,
-            route_code=order.raw_file.route_line,
+            route_code=route_code,
         )
         persisted: list[Box] = []
         for box_number, planned in enumerate(plan.boxes, start=1):
             box_id = str(uuid.uuid4())
+            qr_code_uid = (
+                f"BOX-{plan.route_code}-{order.raw_file.shipment_target_date.replace('-', '')}-"
+                f"{box_number:03d}-{box_id[:8]}"
+            )
             box = Box(
                 id=box_id,
                 client_order_id=order.id,
@@ -93,11 +104,8 @@ class PackingPlanningService:
                 shipment_date=order.raw_file.shipment_target_date,
                 route_code=plan.route_code,
                 is_mixed_box=len(planned.items) > 1,
-                qr_code_uid=(
-                    f"BOX-{plan.route_code}-{order.raw_file.shipment_target_date.replace('-', '')}-"
-                    f"{box_number:03d}-{box_id[:8]}"
-                ),
-                qr_image_url=f"/api/v3/scan/{box_id}",
+                qr_code_uid=qr_code_uid,
+                qr_image_url=(f"{settings.PUBLIC_APP_URL.rstrip('/')}/scan/{qr_code_uid}"),
             )
             self.db.add(box)
             self.db.flush()
@@ -129,6 +137,7 @@ class PackingPlanningService:
             UserRole.FLOOR_STAFF,
             UserRole.OPERATIONS_MANAGER,
             UserRole.SYSTEM_ADMIN,
+            UserRole.STAFF,
         }:
             raise PermissionError("A floor role must start packing")
         order = self.db.query(ClientOrder).filter_by(id=order_id).first()
@@ -143,6 +152,72 @@ class PackingPlanningService:
         self.db.commit()
         return order
 
+    def record_box_weights(
+        self,
+        *,
+        box_id: str,
+        actual_net_weight_kg: float,
+        actual_gross_weight_kg: float,
+        capture_source: str,
+        actor: User,
+    ) -> Box:
+        if actor.role not in {
+            UserRole.FLOOR_STAFF,
+            UserRole.OPERATIONS_MANAGER,
+            UserRole.SYSTEM_ADMIN,
+            UserRole.STAFF,
+        }:
+            raise PermissionError("A floor role must record box weights")
+        box = self.db.query(Box).filter_by(id=box_id).with_for_update().first()
+        if not box:
+            raise ValueError(f"Box {box_id} not found")
+        if box.is_locked:
+            raise ValueError("Locked box weights are immutable")
+        if box.order.status != OrderStatus.FLOOR_PACKING:
+            raise ValueError("Box weights can only be recorded during floor packing")
+        if actual_net_weight_kg < 0 or actual_gross_weight_kg < 0:
+            raise ValueError("Box weights cannot be negative")
+        if actual_gross_weight_kg < actual_net_weight_kg:
+            raise ValueError("Gross weight cannot be below net weight")
+
+        expected_net = round(sum(float(item.final_net_weight_kg) for item in box.items), 2)
+        if abs(actual_net_weight_kg - expected_net) > 0.01:
+            raise ValueError("Actual net weight must match the packed item total")
+        capacity = float((box.override_box_type or box.box_type).max_safe_net_weight_kg)
+        if actual_net_weight_kg > capacity + 0.01:
+            raise ValueError("Actual net weight exceeds the box safe capacity")
+
+        before = {
+            "actual_net_weight_kg": (
+                float(box.actual_net_weight_kg) if box.actual_net_weight_kg is not None else None
+            ),
+            "actual_gross_weight_kg": (
+                float(box.actual_gross_weight_kg)
+                if box.actual_gross_weight_kg is not None
+                else None
+            ),
+        }
+        box.actual_net_weight_kg = round(actual_net_weight_kg, 2)
+        box.actual_gross_weight_kg = round(actual_gross_weight_kg, 2)
+        self.db.add(
+            AuditLog(
+                event_type="BOX_WEIGHT_RECORDED",
+                actor_id=actor.id,
+                actor_role=actor.role.value,
+                target_table="boxes",
+                target_id=box.id,
+                before_state=before,
+                after_state={
+                    "actual_net_weight_kg": float(box.actual_net_weight_kg),
+                    "actual_gross_weight_kg": float(box.actual_gross_weight_kg),
+                    "capture_source": capture_source.strip().upper(),
+                },
+            )
+        )
+        self.db.commit()
+        self.db.refresh(box)
+        return box
+
 
 class FinalPackingService:
     """Owns the transaction that freezes physical packing data."""
@@ -151,7 +226,12 @@ class FinalPackingService:
         self.db = db
 
     def lock_order(self, *, order_id: str, actor: User) -> list[Box]:
-        if actor.role not in {UserRole.OPERATIONS_MANAGER, UserRole.AI_AGENT_2}:
+        if actor.role not in {
+            UserRole.OPERATIONS_MANAGER,
+            UserRole.AI_AGENT_2,
+            UserRole.SYSTEM_ADMIN,
+            UserRole.STAFF,
+        }:
             raise PermissionError("Final packing must be locked by Operations or Agent 2")
         order = self.db.query(ClientOrder).filter_by(id=order_id).with_for_update().first()
         if not order:

@@ -24,7 +24,12 @@ class ProcurementConfirmation:
 class ProcurementConfirmationService:
     """Implements the mandatory market-buyer approval gate."""
 
-    ALLOWED_ROLES = {UserRole.PROCUREMENT_BUYER, UserRole.OPERATIONS_MANAGER, UserRole.SYSTEM_ADMIN}
+    ALLOWED_ROLES = {
+        UserRole.PROCUREMENT_BUYER,
+        UserRole.OPERATIONS_MANAGER,
+        UserRole.SYSTEM_ADMIN,
+        UserRole.STAFF,
+    }
 
     def __init__(self, db: Session):
         self.db = db

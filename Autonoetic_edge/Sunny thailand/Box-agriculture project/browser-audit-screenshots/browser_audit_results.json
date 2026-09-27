@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-09-24T16:07:05.049Z",
+  "pagesTested": [],
+  "networkFailures": [
+    {
+      "url": "http://127.0.0.1:3000/backend/api/v3/auth/login",
+      "status": 401,
+      "statusText": "Unauthorized",
+      "page": "http://127.0.0.1:3000/login"
+    },
+    {
+      "url": "http://127.0.0.1:3000/backend/api/v3/packing/scan/BOX-UNKNOWN-999",
+      "status": 404,
+      "statusText": "Not Found",
+      "page": "http://127.0.0.1:3000/scan/BOX-UNKNOWN-999"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "url": "http://127.0.0.1:3000/login?next=%2Fbilling",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "url": "http://127.0.0.1:3000/login",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "url": "http://127.0.0.1:3000/scan/BOX-UNKNOWN-999",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "pageErrors": [],
+  "workingFeatures": [
+    "Protected Route Guard: Successfully redirects unauthenticated user from /billing to /login?next=%2Fbilling",
+    "Login Authentication: Successfully authenticated with Admin credentials and stored session cookie",
+    "Operations Dashboard: Renders responsive navigation sidebar, executive KPI status, and operations pipeline",
+    "Orders Intake: Universal file upload zone, format selector, and customer mapping controls rendered",
+    "Procurement Module: Displays master purchasing batch, item demand aggregation, and buffer controls",
+    "Packing Station: 1-Click Fast-Track Packing controls, group selector, and box weight overview rendered",
+    "Billing & Invoicing: Invoicing work queue, tax invoice generator, and payment recording interface operational",
+    "Mobile QR Scanner: Correctly retrieves real box record, displays box identity and packed produce breakdown",
+    "Mobile QR Scanner: Displays graceful error/not-found state for unregistered QR codes"
+  ],
+  "brokenFeatures": [
+    "Login Security: No visible error feedback on invalid login"
+  ]
+}

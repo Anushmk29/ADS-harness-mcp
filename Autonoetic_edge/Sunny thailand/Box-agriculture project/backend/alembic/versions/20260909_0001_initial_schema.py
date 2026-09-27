@@ -1,10 +1,8 @@
 """Initial modular monolith schema."""
 
 from alembic import op
-
 from app import models  # noqa: F401
 from app.core.database import Base
-
 
 revision = "20260909_0001"
 down_revision = None
@@ -18,4 +16,3 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     Base.metadata.drop_all(bind=op.get_bind(), checkfirst=True)
-

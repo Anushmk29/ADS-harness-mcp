@@ -10,4 +10,9 @@ node_modules/
 out/
 backend/uploads/
 *.log
+*.db
+*.db.migrated_backup
+*.tsbuildinfo
+.codex-artifact/
+web/test-results/
 

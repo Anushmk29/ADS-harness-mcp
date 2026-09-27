@@ -2,7 +2,11 @@ import hashlib
 import json
 
 import pytest
+from fastapi.testclient import TestClient
 
+from app.core.database import get_db
+from app.core.security import create_access_token
+from app.main import app
 from app.models.audit import AgentHandoff, AuditLog
 from app.models.invoice import Invoice, InvoiceStatus, PaymentTransaction, Receipt
 from app.models.master_data import (
@@ -223,6 +227,8 @@ def test_accounting_lifecycle_is_gated_audited_and_issues_receipt(db_session):
     assert final["status"] == InvoiceStatus.CONFIRMED_PAID.value
     assert final["receipt_issued"] is True
     assert order.status == OrderStatus.RECEIPTS_ISSUED
+    closed = service.close_paid_order(invoice_id=invoice.id, actor=accounting)
+    assert closed.status == OrderStatus.ORDER_CLOSED
     assert db_session.query(PaymentTransaction).count() == 2
     receipt = db_session.query(Receipt).one()
     assert len(receipt.payload_sha256) == 64
@@ -297,3 +303,74 @@ def test_invoice_rejects_live_packing_that_differs_from_signed_handoff(db_sessio
             order.id,
             actor=actor,
         )
+
+
+def test_payment_rejects_amount_above_outstanding_balance(db_session):
+    order = build_order_with_box(db_session, locked=True)
+    agent = db_session.query(User).filter_by(email="agent1@example.com").one()
+    accounting = User(
+        email="accounting@example.com",
+        password_hash="unused",
+        full_name="Accounting Officer",
+        role=UserRole.ACCOUNTING_OFFICER,
+    )
+    db_session.add(accounting)
+    db_session.commit()
+    service = OnBehalfInvoicingService(db_session)
+    invoice = service.generate_sub_customer_invoice(order.id, actor=agent)
+    service.approve_and_dispatch(invoice_id=invoice.id, actor=accounting)
+
+    with pytest.raises(ValueError, match="outstanding balance"):
+        service.record_payment_and_issue_receipt(
+            invoice_id=invoice.id,
+            amount_paid=5.01,
+            payment_date="2026-09-11",
+            bank_name="Bangkok Bank",
+            bank_wire_reference="WIRE-OVERPAY-1",
+            payment_mode="BANK_TRANSFER",
+            actor=accounting,
+        )
+
+    assert db_session.query(PaymentTransaction).count() == 0
+
+
+def test_printable_invoice_escapes_customer_and_product_content(db_session):
+    order = build_order_with_box(db_session, locked=True)
+    agent = db_session.query(User).filter_by(email="agent1@example.com").one()
+    buyer = db_session.query(Customer).filter_by(client_code="BUYER-1").one()
+    product = db_session.query(Product).filter_by(t_code="T001").one()
+    buyer.company_name = "Buyer <script>alert('buyer')</script>"
+    product.name_vi = "Rau <script>alert('produce')</script>"
+    db_session.commit()
+    invoice = OnBehalfInvoicingService(db_session).generate_sub_customer_invoice(
+        order.id,
+        actor=agent,
+    )
+
+    def override_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_db
+    token = create_access_token(
+        {
+            "sub": agent.id,
+            "email": agent.email,
+            "role": agent.role.value,
+            "is_service_principal": agent.is_service_principal,
+        }
+    )
+    try:
+        response = TestClient(app).get(
+            f"/api/v3/invoicing/{invoice.id}/html",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert "<script>" not in response.text
+    assert "&lt;script&gt;" in response.text
+    assert "EU839201948" not in response.text
+    assert "Bangkok Bank Public Company Ltd." not in response.text
+    assert "BKKBTHBK" not in response.text
+    assert "Settlement instructions will be supplied separately" in response.text

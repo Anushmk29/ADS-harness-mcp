@@ -1,17 +1,26 @@
 import os
 import re
 import sys
+
 import openpyxl
 
 # Add backend to sys.path
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from app.core.database import SessionLocal, engine, Base
+from app.core.database import Base, SessionLocal, engine
 from app.core.security import hash_password
 from app.models import (
-    User, UserRole, Product, BoxCatalogue, Customer,
-    BoxMaterial, TemperatureZone, ControlStatus, ProduceType, WeightClass
+    BoxCatalogue,
+    BoxMaterial,
+    ControlStatus,
+    Customer,
+    ProduceType,
+    Product,
+    TemperatureZone,
+    User,
+    UserRole,
+    WeightClass,
 )
 
 
@@ -26,37 +35,73 @@ def estimate_unit_volume_cm3(pack_size: str) -> float:
     # Loose produce is estimated at 0.25 g/cm3 to avoid optimistic box utilization.
     return max(250.0, round(grams / 0.25, 2))
 
+
 def seed_all():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         print("--- 1. Seeding Users & Service Principals ---")
         existing_users = {u.email: u for u in db.query(User).all()}
+        seed_password = os.getenv("SEED_INITIAL_PASSWORD")
+        if not seed_password:
+            if os.getenv("ENVIRONMENT", "development").lower() not in {"development", "test"}:
+                raise RuntimeError(
+                    "SEED_INITIAL_PASSWORD is required when seeding a non-development environment"
+                )
+            seed_password = "Development-Only-Change-Me!"
         users_to_create = [
             ("admin@agricultureislife.com", "Admin System", UserRole.SYSTEM_ADMIN, False),
-            ("procurement@agricultureislife.com", "Somchai (Buyer)", UserRole.PROCUREMENT_BUYER, False),
+            ("staff@agricultureislife.com", "Operations Staff", UserRole.STAFF, False),
+            (
+                "procurement@agricultureislife.com",
+                "Somchai (Buyer)",
+                UserRole.PROCUREMENT_BUYER,
+                False,
+            ),
             ("packer1@agricultureislife.com", "Noi (Floor Lead)", UserRole.FLOOR_STAFF, False),
             ("manager@agricultureislife.com", "Manager Sunny", UserRole.OPERATIONS_MANAGER, False),
-            ("accounting@agricultureislife.com", "Ploi (Finance Officer)", UserRole.ACCOUNTING_OFFICER, False),
-            ("customer_agent@exportb2b.com", "Tonio (Customer Agent)", UserRole.CUSTOMER_AGENT, False),
-            ("agent1.service@agricultureislife.internal", "AI Agent 1 (Commercial Orchestrator)", UserRole.AI_AGENT_1, True),
-            ("agent2.service@agricultureislife.internal", "AI Agent 2 (Fulfillment Orchestrator)", UserRole.AI_AGENT_2, True),
+            (
+                "accounting@agricultureislife.com",
+                "Ploi (Finance Officer)",
+                UserRole.ACCOUNTING_OFFICER,
+                False,
+            ),
+            (
+                "customer_agent@exportb2b.com",
+                "Tonio (Customer Agent)",
+                UserRole.CUSTOMER_AGENT,
+                False,
+            ),
+            (
+                "agent1.service@agricultureislife.internal",
+                "AI Agent 1 (Commercial Orchestrator)",
+                UserRole.AI_AGENT_1,
+                True,
+            ),
+            (
+                "agent2.service@agricultureislife.internal",
+                "AI Agent 2 (Fulfillment Orchestrator)",
+                UserRole.AI_AGENT_2,
+                True,
+            ),
         ]
         for email, name, role, is_sp in users_to_create:
             if email not in existing_users:
                 u = User(
                     email=email,
                     full_name=name,
-                    password_hash=hash_password("Password123!"),
+                    password_hash=hash_password(seed_password),
                     role=role,
-                    is_service_principal=is_sp
+                    is_service_principal=is_sp,
                 )
                 db.add(u)
         db.commit()
         print(f"Users seeded. Total: {db.query(User).count()}")
 
         print("--- 2. Seeding 15 Master Box Types ---")
-        existing_boxes = {f"{b.box_type}_{b.size_name}_{b.length_cm}": b for b in db.query(BoxCatalogue).all()}
+        existing_boxes = {
+            f"{b.box_type}_{b.size_name}_{b.length_cm}": b for b in db.query(BoxCatalogue).all()
+        }
         boxes_meta = [
             (BoxMaterial.CARDBOARD, "Small", 38, 32, 18, 3.65, 0.0219, 4.50),
             (BoxMaterial.CARDBOARD, "Flat", 50, 32, 18, 4.80, 0.0288, 5.50),
@@ -74,18 +119,18 @@ def seed_all():
             (BoxMaterial.FOAM, "Large", 46, 34, 36, 9.38, 0.0563, 11.00),
             (BoxMaterial.FOAM, "Giant", 60, 44, 30, 13.20, 0.0792, 15.00),
         ]
-        for b_type, s_name, l, w, h, rated_w, vol, max_safe in boxes_meta:
-            key = f"{b_type}_{s_name}_{l}"
+        for b_type, s_name, length, width, height, rated_w, vol, max_safe in boxes_meta:
+            key = f"{b_type}_{s_name}_{length}"
             if key not in existing_boxes:
                 b = BoxCatalogue(
                     box_type=b_type,
                     size_name=s_name,
-                    length_cm=l,
-                    width_cm=w,
-                    height_cm=h,
+                    length_cm=length,
+                    width_cm=width,
+                    height_cm=height,
                     rated_weight_kg=rated_w,
                     volume_m3=vol,
-                    max_safe_net_weight_kg=max_safe
+                    max_safe_net_weight_kg=max_safe,
                 )
                 db.add(b)
         db.commit()
@@ -108,7 +153,13 @@ def seed_all():
                 foam = ws_g.cell(r, 5).value
                 el = ws_g.cell(r, 7).value
                 if desc:
-                    clean_name = desc.replace("**", "").replace("BB", "").replace("TT", "").replace("NN", "").strip()
+                    clean_name = (
+                        desc.replace("**", "")
+                        .replace("BB", "")
+                        .replace("TT", "")
+                        .replace("NN", "")
+                        .strip()
+                    )
                     grouping_tax[clean_name.lower()] = {
                         "material": BoxMaterial.FOAM if foam else BoxMaterial.CARDBOARD,
                         "temp": TemperatureZone.COLD if foam else TemperatureZone.NORMAL,
@@ -129,11 +180,31 @@ def seed_all():
                 if code and (name_vi or name_en):
                     if code not in existing_prods:
                         matched_tax = grouping_tax.get(name_th.lower(), {})
-                        material = matched_tax.get("material", BoxMaterial.FOAM if "tray" in pack.lower() or "cold" in name_en.lower() else BoxMaterial.CARDBOARD)
-                        temp = matched_tax.get("temp", TemperatureZone.COLD if material == BoxMaterial.FOAM else TemperatureZone.NORMAL)
+                        material = matched_tax.get(
+                            "material",
+                            BoxMaterial.FOAM
+                            if "tray" in pack.lower() or "cold" in name_en.lower()
+                            else BoxMaterial.CARDBOARD,
+                        )
+                        temp = matched_tax.get(
+                            "temp",
+                            TemperatureZone.COLD
+                            if material == BoxMaterial.FOAM
+                            else TemperatureZone.NORMAL,
+                        )
                         control = matched_tax.get("control", ControlStatus.COMBINABLE)
-                        ptype = ProduceType.LEAFY if "leaf" in name_en.lower() or "herb" in name_en.lower() or "glory" in name_en.lower() else ProduceType.FRUIT
-                        wclass = WeightClass.LIGHT if "100g" in pack or "tray" in pack else WeightClass.HEAVY
+                        ptype = (
+                            ProduceType.LEAFY
+                            if "leaf" in name_en.lower()
+                            or "herb" in name_en.lower()
+                            or "glory" in name_en.lower()
+                            else ProduceType.FRUIT
+                        )
+                        wclass = (
+                            WeightClass.LIGHT
+                            if "100g" in pack or "tray" in pack
+                            else WeightClass.HEAVY
+                        )
 
                         p = Product(
                             t_code=code,
@@ -163,7 +234,13 @@ def seed_all():
                 foam = ws_g.cell(r, 5).value
                 el = ws_g.cell(r, 7).value
                 if desc:
-                    clean_name = desc.replace("**", "").replace("BB", "").replace("TT", "").replace("NN", "").strip()
+                    clean_name = (
+                        desc.replace("**", "")
+                        .replace("BB", "")
+                        .replace("TT", "")
+                        .replace("NN", "")
+                        .strip()
+                    )
                     code = f"T{idx:03d}"
                     idx += 1
                     if code not in existing_prods:
@@ -176,7 +253,9 @@ def seed_all():
                             box_material=BoxMaterial.FOAM if foam else BoxMaterial.CARDBOARD,
                             temperature=TemperatureZone.COLD if foam else TemperatureZone.NORMAL,
                             control_status=ControlStatus.EL if el else ControlStatus.COMBINABLE,
-                            produce_type=ProduceType.LEAFY if "ผัก" in clean_name else ProduceType.FRUIT,
+                            produce_type=ProduceType.LEAFY
+                            if "ผัก" in clean_name
+                            else ProduceType.FRUIT,
                             weight_class=WeightClass.LIGHT,
                             default_pack_sizes=["100g tray", "200g", "500g", "1kg"],
                             default_unit_volume_cm3=estimate_unit_volume_cm3("200g"),
@@ -194,7 +273,11 @@ def seed_all():
                 ws = wb_o[sheet_name]
                 for col in range(6, ws.max_column + 1):
                     header_val = ws.cell(3, col).value
-                    if header_val and str(header_val).strip() and not str(header_val).startswith("#"):
+                    if (
+                        header_val
+                        and str(header_val).strip()
+                        and not str(header_val).startswith("#")
+                    ):
                         client_code = str(header_val).strip()
                         if client_code not in existing_custs:
                             route = sheet_name.split()[0] if sheet_name != "Group 1" else "CT"
@@ -204,7 +287,7 @@ def seed_all():
                                 company_name=f"Client {client_code}",
                                 billing_email=f"{client_code.lower().replace(' ', '_')}@clienttrade.eu",
                                 route_group=route,
-                                destination_country=country
+                                destination_country=country,
                             )
                             db.add(c)
                             existing_custs[client_code] = c
@@ -214,6 +297,7 @@ def seed_all():
         print("--- Master Data Seeding Finished Successfully! ---")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_all()

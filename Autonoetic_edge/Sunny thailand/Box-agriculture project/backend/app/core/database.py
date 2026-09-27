@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from sqlalchemy import create_engine, make_url
@@ -10,6 +11,16 @@ from app.core.config import settings
 def normalize_database_url(database_url: str) -> str:
     """Return a SQLAlchemy URL suitable for Supabase or the SQLite test fallback."""
     if database_url.startswith("sqlite"):
+        if (
+            database_url.startswith("sqlite:///")
+            and not database_url.startswith("sqlite:////")
+            and ":memory:" not in database_url
+        ):
+            db_rel_path = database_url[len("sqlite:///") :]
+            if not os.path.isabs(db_rel_path):
+                backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                db_abs_path = os.path.join(backend_dir, db_rel_path).replace("\\", "/")
+                return f"sqlite:///{db_abs_path}"
         return database_url
 
     url = make_url(database_url)

@@ -96,3 +96,21 @@ def test_optimizer_enforces_92_percent_usable_box_volume():
 
     assert len(plan.boxes) == 3
     assert all(box.total_volume_cm3 <= 920.0 for box in plan.boxes)
+
+
+def test_optimizer_norway_route_permits_el_mixing_with_combinable():
+    plan = DeterministicPackingOptimizer().solve(
+        demands=[
+            demand("celery-el", control_status=ControlStatus.EL, botanical_family="Apiaceae"),
+            demand("pennywort-comb", control_status=ControlStatus.COMBINABLE),
+        ],
+        options=[PackingOption("foam-giant", BoxMaterial.FOAM, 15.0, 70000.0)],
+        route_code="NGA",
+    )
+
+    # In Norway route NGA, EL and COMBINABLE items can share a single box
+    assert len(plan.boxes) == 1
+    box = plan.boxes[0]
+    assert len(box.items) == 2
+    item_controls = {it.control_status for it in box.items}
+    assert item_controls == {ControlStatus.EL, ControlStatus.COMBINABLE}

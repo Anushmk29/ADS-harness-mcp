@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -27,7 +28,7 @@ class HandoffService:
         self.db = db
 
     def dispatch_handoff_01(self, *, batch_id: str, actor: User) -> AgentHandoff:
-        if actor.role not in {UserRole.AI_AGENT_1, UserRole.SYSTEM_ADMIN}:
+        if actor.role not in {UserRole.AI_AGENT_1, UserRole.SYSTEM_ADMIN, UserRole.STAFF}:
             raise PermissionError("Handoff 01 must be dispatched by Agent 1")
         batch = self.db.query(MasterPurchasingList).filter_by(id=batch_id).first()
         if not batch:
@@ -39,7 +40,8 @@ class HandoffService:
         allocated_counts = self._allocate_confirmed_counts(batch, orders)
         confirmed_orders = []
         for order in sorted(orders, key=lambda current: current.order_ref_id):
-            for item in order.items:
+            positive_items = [item for item in order.items if item.ordered_pack_count > 0]
+            for item in positive_items:
                 item.confirmed_pack_count = allocated_counts[item.id]
                 item.confirmed_net_weight_kg = round(
                     float(item.estimated_net_weight_kg)
@@ -68,15 +70,17 @@ class HandoffService:
                             "weight_class": item.product.weight_class.value,
                         }
                         for item in sorted(
-                            order.items, key=lambda current: (current.product_id, current.pack_size)
+                            positive_items,
+                            key=lambda current: (current.product_id, current.pack_size),
                         )
                     ],
                 }
             )
 
         now = datetime.now(UTC)
+        handoff_id = str(uuid.uuid4())
         payload = {
-            "handoff_id": None,
+            "handoff_id": handoff_id,
             "timestamp": now.isoformat(),
             "shipment_date": batch.shipment_date,
             "route_code": batch.route_code or self._batch_route(batch),
@@ -96,17 +100,14 @@ class HandoffService:
             "confirmed_orders": confirmed_orders,
         }
         handoff = AgentHandoff(
+            id=handoff_id,
             handoff_type="HANDOFF_01_ORDER_DATA",
             sender_agent="AI_AGENT_1",
             recipient_agent="AI_AGENT_2",
             payload_json=payload,
-            payload_sha256="pending",
+            payload_sha256=_canonical_hash(payload),
         )
         self.db.add(handoff)
-        self.db.flush()
-        payload["handoff_id"] = handoff.id
-        handoff.payload_json = payload
-        handoff.payload_sha256 = _canonical_hash(payload)
 
         workflow = WorkflowService(self.db)
         workflow.transition(
@@ -127,7 +128,7 @@ class HandoffService:
         return handoff
 
     def return_handoff_02(self, *, order_id: str, actor: User) -> AgentHandoff:
-        if actor.role not in {UserRole.AI_AGENT_2, UserRole.SYSTEM_ADMIN}:
+        if actor.role not in {UserRole.AI_AGENT_2, UserRole.SYSTEM_ADMIN, UserRole.STAFF}:
             raise PermissionError("Handoff 02 must be returned by Agent 2")
         order = self.db.query(ClientOrder).filter_by(id=order_id).first()
         if not order:
@@ -141,11 +142,16 @@ class HandoffService:
             raise ValueError("All boxes must be locked before Handoff 02")
 
         now = datetime.now(UTC)
+        handoff_id = str(uuid.uuid4())
         payload = {
-            "handoff_id": None,
+            "handoff_id": handoff_id,
             "timestamp": now.isoformat(),
             "shipment_date": order.raw_file.shipment_target_date,
-            "route_code": order.raw_file.route_line,
+            "route_code": (
+                order.customer.route_group
+                if order.customer and order.customer.route_group
+                else order.raw_file.route_line
+            ),
             "final_packing_manifest_id": order.id,
             "packed_by_staff_id": boxes[0].packed_by_staff,
             "locked_at": max(box.locked_at for box in boxes).isoformat(),
@@ -185,17 +191,14 @@ class HandoffService:
             ],
         }
         handoff = AgentHandoff(
+            id=handoff_id,
             handoff_type="HANDOFF_02_FINAL_PACKING",
             sender_agent="AI_AGENT_2",
             recipient_agent="AI_AGENT_1",
             payload_json=payload,
-            payload_sha256="pending",
+            payload_sha256=_canonical_hash(payload),
         )
         self.db.add(handoff)
-        self.db.flush()
-        payload["handoff_id"] = handoff.id
-        handoff.payload_json = payload
-        handoff.payload_sha256 = _canonical_hash(payload)
         WorkflowService(self.db).transition(
             target=order,
             to_status=OrderStatus.HANDOFF_02_RETURNED,
@@ -239,6 +242,10 @@ class HandoffService:
         allocations: dict[str, int] = {}
         for key, items in grouped.items():
             total_requested = sum(item.ordered_pack_count for item in items)
+            if total_requested <= 0:
+                for item in items:
+                    allocations[item.id] = 0
+                continue
             target = min(confirmed.get(key, 0), total_requested)
             ranked = []
             allocated = 0

@@ -44,21 +44,22 @@ class OrderValidationService:
             UserRole.AI_AGENT_1,
             UserRole.OPERATIONS_MANAGER,
             UserRole.SYSTEM_ADMIN,
+            UserRole.STAFF,
         }:
             raise PermissionError("Order validation requires Agent 1 or an operations manager")
         raw_file = self.db.query(RawOrderFile).filter_by(id=raw_file_id).first()
         if not raw_file:
             raise ValueError(f"Raw order file {raw_file_id} not found")
-        if raw_file.status != OrderStatus.UPLOADED:
-            raise ValueError("Only an uploaded matrix can be validated")
+        if raw_file.status not in {OrderStatus.UPLOADED, OrderStatus.PARSED}:
+            raise ValueError("Only an uploaded or parsed matrix can be validated")
 
         parsed = MatrixOrderParser(raw_file.storage_url).parse_all_clients()
         matcher = NameFirstMatcher(self.db)
         unresolved = []
         resolved = 0
         for product in parsed["products_catalog"].values():
-            match, _, _ = matcher.resolve_product(
-                raw_name=product["name_vi"] or product["name_en"],
+            match, _, _ = matcher.resolve_product_names(
+                [product["name_vi"], product["name_en"]],
                 raw_code=product["code"],
                 main_customer_id=raw_file.main_customer_id,
             )
@@ -74,12 +75,13 @@ class OrderValidationService:
                     )
                 )
 
-        WorkflowService(self.db).transition(
-            target=raw_file,
-            to_status=OrderStatus.PARSED,
-            actor=actor,
-            target_table="raw_order_files",
-        )
+        if raw_file.status == OrderStatus.UPLOADED:
+            WorkflowService(self.db).transition(
+                target=raw_file,
+                to_status=OrderStatus.PARSED,
+                actor=actor,
+                target_table="raw_order_files",
+            )
         raw_file.acknowledgment_summary = {
             **(raw_file.acknowledgment_summary or {}),
             "validation": {
