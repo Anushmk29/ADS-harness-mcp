@@ -1,0 +1,14 @@
+{
+  "capability": "ads_compare_performance",
+  "input": {
+    "currency": "INR", "since": "2026-09-01", "until": "2026-09-10",
+    "channels": [
+      { "platform": "meta", "currency": "INR", "spend": 1000, "attributedRevenue": 3000 },
+      { "platform": "google", "currency": "INR", "spend": 1000, "attributedRevenue": 4000 }
+    ],
+    "orders": [
+      { "orderId": "demo-order-1", "currency": "INR", "revenue": 5000 },
+      { "orderId": "demo-order-1", "currency": "INR", "revenue": 5000 }
+    ]
+  }
+}

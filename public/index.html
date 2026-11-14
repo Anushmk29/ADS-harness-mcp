@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marketing Operations — {{APP_NAME}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter+Tight:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/console.css" />
+</head>
+<body class="console-mode">
+  <div id="login-screen" hidden>
+    <div class="login-card">
+      <h1>{{APP_NAME}}</h1>
+      <p>Sign in to see your marketing.</p>
+      <form id="login-form">
+        <label for="login-user">Username</label><input class="c-input" id="login-user" autocomplete="username" required>
+        <label for="login-pass">Password</label><input class="c-input" id="login-pass" type="password" autocomplete="current-password" required>
+        <p style="margin-top:16px"><button class="c-btn primary" type="submit">Sign in</button></p>
+        <div id="login-error" class="c-error" role="alert"></div>
+      </form>
+      <form id="password-form" hidden>
+        <p>Please choose your own password (at least 12 characters).</p>
+        <label for="current-pass">One-time password</label><input class="c-input" id="current-pass" type="password" autocomplete="current-password" required>
+        <label for="new-pass">New password</label><input class="c-input" id="new-pass" type="password" minlength="12" autocomplete="new-password" required>
+        <label for="new-pass-2">New password again</label><input class="c-input" id="new-pass-2" type="password" minlength="12" autocomplete="new-password" required>
+        <p style="margin-top:16px"><button class="c-btn primary" type="submit">Save password</button></p>
+        <div id="password-error" class="c-error" role="alert"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="console" hidden>
+    <nav class="rail" aria-label="Main">
+      <div class="rail-brand"><span class="rail-logo" aria-hidden="true">{{BRAND_INITIAL}}</span><span>{{APP_NAME}}</span></div>
+      <button data-view="home">Home</button>
+      <button data-view="approvals">Approvals <span id="approvals-badge" class="badge" hidden>0</span></button>
+      <button data-view="progress">Progress</button>
+      <button data-view="results">Results</button>
+      <button data-view="business">My Business</button>
+      <div class="rail-foot">
+        <button data-view="inside">See inside the system</button>
+        <button id="logout-btn">Sign out</button>
+      </div>
+    </nav>
+    <main id="console-main" aria-live="polite"></main>
+  </div>
+
+  <div id="inside">
+  <button id="back-to-console" class="c-btn back-to-console">← Back to console</button>
+  <header id="app-header">
+    <div class="brand-section">
+      <div class="brand-logo" aria-hidden="true">{{BRAND_INITIAL}}</div>
+      <div>
+        <strong class="brand-title">Marketing operations</strong>
+        <span class="brand-subtitle">{{APP_NAME}}</span>
+      </div>
+    </div>
+
+    <nav class="nav-tabs" aria-label="Primary navigation">
+      <button class="nav-tab active" data-tab="3d">Live floor</button>
+      <button class="nav-tab" data-tab="overview">Client dashboard</button>
+      <button class="nav-tab" data-tab="decode">Decode</button>
+    </nav>
+
+    <div class="status-pill"><span class="status-dot"></span><span>Live</span></div>
+  </header>
+
+  <main id="main-view-container">
+    <section id="view-3d" class="view-panel active" aria-label="Live marketing team floor">
+      <div id="threejs-canvas-container"></div>
+
+      <aside class="hud-panel glass floor-summary" aria-label="Live summary">
+        <div class="panel-heading">Live team</div>
+        <div class="floor-metrics">
+          <div><strong id="stat-working-agents">0</strong><span>working</span></div>
+          <div><strong id="stat-hitl-agents">0</strong><span>need input</span></div>
+          <div><strong id="stat-idle-agents">0</strong><span>ready</span></div>
+        </div>
+        <p id="floor-summary-copy">The team is connected and ready.</p>
+      </aside>
+
+      <aside class="hud-panel glass activity-panel" aria-label="Recent activity">
+        <div class="panel-heading"><span>What is happening</span><span class="status-dot"></span></div>
+        <div class="feed-list" id="activity-feed-list">
+          <div class="feed-item"><time>Now</time><p>Your marketing team is online.</p></div>
+        </div>
+      </aside>
+
+      <div class="hud-panel glass camera-controls" aria-label="Floor camera controls">
+        <button class="camera-btn active" data-preset="overview">Whole floor</button>
+        <button class="camera-btn" data-preset="ads">Advertising</button>
+        <button class="camera-btn" data-preset="analytics">Insights</button>
+        <button class="camera-btn" data-preset="active">Follow activity</button>
+      </div>
+
+      <aside id="agent-inspector-drawer" class="glass" aria-label="Work detail">
+        <div class="drawer-header">
+          <div>
+            <h2 id="inspector-agent-name">Team member</h2>
+            <p id="inspector-agent-role">Marketing specialist</p>
+            <div class="drawer-meta"><span id="inspector-agent-department"></span><span id="inspector-agent-status" class="status-pill">Ready</span></div>
+          </div>
+          <button id="close-inspector-btn" class="icon-button" aria-label="Close work detail">×</button>
+        </div>
+        <div class="drawer-body">
+          <section class="info-card">
+            <h3>Current work</h3>
+            <strong id="inspector-task-name">No active work</strong>
+            <p id="inspector-subtask">Ready for the next task.</p>
+            <div class="progress-track"><div id="inspector-progress-bar" class="progress-fill"></div></div>
+            <span id="inspector-progress-val" class="progress-label">0%</span>
+          </section>
+          <section class="info-card">
+            <h3>Recent updates</h3>
+            <div id="inspector-history-list" class="history-timeline"></div>
+          </section>
+        </div>
+      </aside>
+    </section>
+
+    <section id="view-overview" class="view-panel" aria-label="Client marketing dashboard"></section>
+    <section id="view-decode" class="view-panel" aria-label="Decode a niche: organic posts and competitor ads"></section>
+  </main>
+  </div>
+
+  <script src="/js/vendor/three.min.js"></script>
+  <script src="/js/vendor/OrbitControls.js"></script>
+  <script src="/js/office-3d.js"></script>
+  <script src="/js/agent-inspector.js"></script>
+  <script src="/js/views/overview-view.js"></script>
+  <script src="/js/views/decode-view.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/console.js"></script>
+</body>
+</html>

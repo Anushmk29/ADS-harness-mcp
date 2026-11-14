@@ -1,1 +1,0 @@
- Purchase Order Summary, Box Control Register. The example product label must use a 4" x 4" sticker

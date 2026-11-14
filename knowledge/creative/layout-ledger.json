@@ -1,0 +1,4 @@
+{
+  "_rule": "A new piece may not repeat ground + grid + cover of any of the last 5 entries, and must change at least 3 axes from the previous one.",
+  "entries": []
+}

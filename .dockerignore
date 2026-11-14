@@ -1,0 +1,13 @@
+node_modules
+dist
+.test-marketing-data
+.git
+.env
+.env.*
+!.env.example
+.marketing-data
+.pnpm-store
+.ua
+graphify-out
+runs
+*.log

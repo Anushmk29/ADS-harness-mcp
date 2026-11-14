@@ -1,0 +1,191 @@
+business:
+  id: biz_pratap_ai_01
+  name: Pratap AI Innovations
+  industry: Applied AI Automation, Custom AI Systems & Communications Infrastructure
+  website: https://pratap.ai
+  description: AI engineering and automation studio building practical AI systems,
+    autonomous customer communications, and workflow automation for founder-led
+    SMEs, dental/medical practices, and fast-growing agencies.
+  products:
+    - id: prod_frontdesk_whatsapp
+      name: Front Desk — Autonomous AI Receptionist
+      category: Customer Communication & Booking Automation
+      pricing:
+        model: project_plus_retainer
+        amount: 350000
+        currency: INR
+      valueProposition: The messaging half of your front desk running on its own
+        across WhatsApp and Messenger. Answers pricing and FAQs 24/7, books
+        appointments against live calendar availability, and routes across
+        branches with 1-tap staff takeover.
+      differentiators:
+        - Sub-second 24/7 conversational response on WhatsApp & Messenger
+        - Direct live calendar booking with automatic pre-appointment
+          confirmation
+        - 1-tap instant human override whenever clinic staff want to step in
+        - Zero hallucination guardrails — clinic logistics and pricing only,
+          zero clinical diagnosis
+        - Recovers €33,600+ / ₹28L+ in lost out-of-hours booking leaks with zero
+          ad spend
+      marginsPercent: 85
+      targetAudienceId: aud_dental_expansion_owner
+    - id: prod_custom_workflow_automation
+      name: Custom Workflow Automation & AI Systems
+      category: Bespoke AI Engineering
+      pricing:
+        model: fixed_scope_build
+        amount: 300000
+        currency: INR
+      valueProposition: Remove 9 to 10 repetitive manual processes costing your team
+        hours every day. Scoped to a workflow that visibly hurts, shipped into
+        your existing stack in 1–3 weeks, and handed over with complete
+        documentation.
+      differentiators:
+        - Shipped directly to production with complete code and docs handover
+          (no vendor lock-in)
+        - Proven track record with 11 production systems running across B2B and
+          offline deployments
+        - Not a pilot and not a headcount cut — enables existing teams to cover
+          3x more ground
+      marginsPercent: 80
+      targetAudienceId: aud_smb_operator_founder
+    - id: prod_agency_ai_module
+      name: Agency White-Label AI & Workflow Modules
+      category: White-Label Agency Development
+      pricing:
+        model: module_plus_monthly_retainer
+        amount: 450000
+        currency: INR
+      valueProposition: Empower digital and marketing agencies to offer bespoke AI
+        agents, competitor intelligence scrapers, and WhatsApp automation
+        modules to their clients without hiring in-house ML engineers.
+      differentiators:
+        - 10-day module turnaround for client delivery
+        - Full architecture documentation and maintainability handover
+      marginsPercent: 80
+      targetAudienceId: aud_agency_owner
+  services:
+    - id: srv_ai_readiness
+      name: ₹2L AI Readiness & Architecture Diagnostic
+      pricingModel: fixed_fee
+      targetAudienceId: aud_coo_operations_head
+  targetMarket:
+    - Dental Practice Owners & Principal Dentists (Expanding to 2–5 branches)
+    - Medical, cosmetic, dermatology & physiotherapy clinics
+    - Founder-led SMEs with 5–50 staff (₹50L–₹10Cr revenue)
+    - Digital & marketing agencies wanting white-label AI client modules
+    - Multi-location salons, spas, fitness studios, and coaching centres
+  geography:
+    - India (Tier 1 & Tier 2 cities)
+    - United Kingdom (UK)
+    - United States (US)
+    - Southeast Asia (Singapore, Bangkok, Ho Chi Minh)
+    - Gulf / Middle East (UAE, Saudi Arabia)
+  businessModel: B2B_SERVICE
+  salesCycleDays: 14
+  avgCustomerLTV: 1200000
+  currentCAC: 35000
+  targetCAC: 20000
+brand:
+  voice: Pragmatic, builder-first, transparent, operator-focused, and rigorously
+    anti-hype. Written from the perspective of an engineer who actually builds
+    and ships production AI, not a marketer selling shiny toys.
+  tone:
+    - Operator-to-operator honesty
+    - Practical & architecture-grounded
+    - Direct about real costs, failure points, and production realities
+    - Focused on ROI and operational bottlenecks
+  positioning: The production AI automation partner that turns messy manual
+    workflows, customer communications, and multi-branch clinic bookings into
+    reliable, deterministic systems in weeks, not months.
+  bannedPhrases:
+    - In today’s fast-paced digital landscape
+    - Unleash the power of AI
+    - Game changer
+    - Revolutionize your business
+    - Silver bullet
+    - Magic wand
+    - Skyrocket your growth
+    - Next-gen synergy
+    - Look no further
+    - Let me know your thoughts
+    - Free consultation available
+    - AI-powered digital transformation
+  preferredPhrases:
+    - Shipped to production
+    - Running in real business operations
+    - Layer 4 observability & handover
+    - Eliminate operational bottlenecks
+    - Deterministic execution
+    - Scale without hiring
+    - Real numbers and transparent architecture
+    - What we got wrong and how we fixed it
+    - DM me — scoped builds start at ₹2L
+    - The messaging half of your front desk, running on its own
+  valuePillars:
+    - Production-Ready Execution Over Vaporware
+    - Complete Code Handover & Observability (No Black Boxes)
+    - Immediate Payback on Operational Labor and Leaked Bookings
+    - Zero-BS Truth About What AI Can and Cannot Do
+  messagingRules:
+    - Every piece of content must address the Operator-Owner with ₹2L–5L budget
+      authority.
+    - Show actual architecture, build logs, and code/workflow diagrams rather
+      than abstract claims.
+    - "Pre-handle the 4 core fears: delivery risk, maintainability/handover,
+      hidden costs, and vendor reliability."
+    - Use direct, scoped CTAs (e.g., 'DM me — scoped builds start at ₹2L').
+    - For dental audiences, speak specifically about expansion friction across
+      2–5 branches.
+  visual:
+    colors:
+      primary: "#d4af37"
+      secondary: "#f5f1e6"
+      background: "#0b0b0c"
+      text: "#f5f1e6"
+    mood:
+      - calm
+      - precise
+      - quietly confident
+    texture: matte, low-gloss
+    negativeSpace: clean empty upper third for headline text
+    forbidden:
+      - stock-photo handshakes
+      - glowing robot heads
+      - holographic brains
+      - neon circuit-board clichés
+    wordmark: PRATAP AI
+marketing:
+  objectives:
+    - Generate 10–20 high-intent qualified DMs and inbound leads per month
+    - Convert 2–4 discovery calls into 1–2 closed ₹2L–5L Front Desk and Workflow
+      builds monthly
+    - Dominate Google Search and Organic SEO for 'WhatsApp AI agent business
+      automation' and 'dental front desk automation'
+    - Build thought leadership and pipeline via LinkedIn and Meta targeted
+      campaigns in India, UK, US, SE Asia, and the Gulf
+  primaryKPIs:
+    monthlyQualifiedLeads: 20
+    targetBlendedCAC: 20000
+    mqlToSqlRatePercent: 40
+    targetROAS: 5.5
+  secondaryKPIs:
+    organicSearchTrafficGrowthMoM: 25
+    emailNurtureClickToMeetingRatePercent: 12
+    metaAdCTRPercent: 2.4
+    googleSearchImpressionSharePercent: 70
+  monthlyBudget:
+    total: 150000
+    currency: INR
+    allocations:
+      google_ads: 60000
+      meta_ads: 45000
+      content_and_seo: 30000
+      email_and_crm_tools: 15000
+  channels:
+    - google_search
+    - meta_ads
+    - linkedin_organic_and_ads
+    - organic_seo
+    - email_nurture
+    - whatsapp_inbound_funnel

@@ -1,0 +1,31 @@
+# ⚠️ This file configures REAL ad-platform integrations for the marketing harness.
+# Before enabling a platform, understand: mode 'direct' sends REAL mutations that
+# spend REAL money. Every write is journaled and needs explicit approval; account
+# allowlists and budget ceilings live in config/ads-module.yaml.
+#
+# Modes:
+#   off      - platform stays on the built-in mock/simulation (safe default).
+#   dry-run  - reads are LIVE; writes are staged for review but NEVER sent.
+#   direct   - reads are LIVE; writes require HITL approval then ARE sent.
+#
+# Credentials come from environment variables (DO NOT commit secrets here):
+#   Google Ads : ADS_DIRECT_GOOGLE_DEVELOPER_TOKEN, ADS_DIRECT_GOOGLE_ACCESS_TOKEN,
+#                ADS_DIRECT_GOOGLE_LOGIN_CUSTOMER (optional, MCC parent)
+#   Meta Ads   : ADS_DIRECT_META_ACCESS_TOKEN (long-lived user or system-user token
+#                with ads_management, ads_read, read_insights)
+#   GA4        : ADS_DIRECT_GA4_ACCESS_TOKEN + ADS_DIRECT_GA4_PROPERTY_ID
+#
+# Alternatively store OAuth tokens via TokenStore/oauth helpers; env vars take priority.
+
+ads:
+  google_ads:
+    mode: off          # | dry-run | direct
+    defaultAccountId: null   # e.g. your Google Ads customer id (login customer)
+
+  meta_ads:
+    mode: off          # | dry-run | direct
+    defaultAccountId: null   # e.g. act_123456789
+
+  ga4:
+    mode: off          # GA4 is read-only; no write gate applies
+    defaultAccountId: null   # GA4 property id (prefer env ADS_DIRECT_GA4_PROPERTY_ID)

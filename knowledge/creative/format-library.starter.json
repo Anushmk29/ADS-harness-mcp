@@ -1,0 +1,38 @@
+{
+  "_note": "Starter entries are ad shapes commonly seen, NOT verified as current. Radar sets status and examples.",
+  "formats": [
+    {
+      "id": "video-meme-cold-open",
+      "platform": "meta",
+      "type": "video_ad",
+      "status": "unverified",
+      "beats": ["0-3s recognisable meme or fail clip", "3-4s black screen", "4-25s pitch", "CTA"],
+      "fits_frameworks": ["PAS", "BAB", "AIDA"],
+      "fits_niches": ["b2b-automation"],
+      "examples": [],
+      "last_seen": null
+    },
+    {
+      "id": "static-statement-product",
+      "platform": "meta",
+      "type": "static_ad",
+      "status": "unverified",
+      "beats": ["statement headline", "product shot", "offer plus arrow"],
+      "fits_frameworks": ["FAB", "4Us"],
+      "fits_niches": ["any"],
+      "examples": [],
+      "last_seen": null
+    },
+    {
+      "id": "carousel-how-it-works",
+      "platform": "meta",
+      "type": "carousel_ad",
+      "status": "unverified",
+      "beats": ["hook card", "one step per card", "offer plus ask"],
+      "fits_frameworks": ["FAB", "BAB"],
+      "fits_niches": ["any"],
+      "examples": [],
+      "last_seen": null
+    }
+  ]
+}

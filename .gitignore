@@ -1,0 +1,41 @@
+# Build output
+/dist/
+
+# Runtime state & persisted memory (contains real business data, audit trails, and
+# OAuth tokens under .marketing-data/oauth/). Never commit these.
+.marketing-data/
+.test-marketing-data/
+
+# Environment / secrets
+.env
+.env.local
+.env.*
+!.env.example
+*.pem
+*.jwk
+*.key
+
+# Dependency stores
+node_modules/
+.pnpm-store/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+# Local code-analysis cache
+.ua/
+graphify-out/
+.claude/settings.local.json
+CLAUDE.local.md
+*.log
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Generated ad creatives (src/modules/creative)
+runs/
+
+.claude

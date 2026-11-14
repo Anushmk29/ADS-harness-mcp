@@ -1,0 +1,8 @@
+{
+  "capability": "meta_ads_create_campaign",
+  "input": {
+    "accountId": "123456789",
+    "operationId": "first-paused-test-1",
+    "data": { "name": "Harness paused test", "objective": "OUTCOME_LEADS", "status": "PAUSED", "special_ad_categories": [] }
+  }
+}

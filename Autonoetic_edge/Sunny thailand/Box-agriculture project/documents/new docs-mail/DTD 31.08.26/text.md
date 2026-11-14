@@ -1,1 +1,0 @@
-Purchase Order Summary, Box Control Register. The product label sticker must be 4" x 4

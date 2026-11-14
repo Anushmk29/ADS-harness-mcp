@@ -1,0 +1,13 @@
+# Per-client ads policy. Start in dry-run with no accounts; add the client's account ids
+# after access is granted, and verifiedAccounts only after a paused-object test.
+mode: dry-run
+accounts:
+  meta: []
+  google: []
+  ga4: []
+verifiedAccounts:
+  meta: []
+  google: []
+  ga4: []
+allowedObjects: []
+maxBudgetPerWrite: {}

@@ -1,0 +1,54 @@
+{
+  "name": "autonomous-marketing-harness",
+  "version": "1.1.0",
+  "description": "Single-business hyper-personalized autonomous marketing operating system for DeepSeek Harness",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./departments": "./dist/departments/runtime.js",
+    "./ads": "./dist/departments/runtime.js",
+    "./analytics": "./dist/departments/runtime.js",
+    "./research": "./dist/departments/runtime.js",
+    "./hq": "./dist/departments/runtime.js",
+    "./modules": "./dist/core/modules/registry.js",
+    "./modules/ads": "./dist/modules/ads/index.js"
+  },
+  "bin": {
+    "marketing-jobs": "./bin/jobs.js",
+    "marketing-department": "./bin/department.js",
+    "marketing-mcp": "./bin/mcp.js",
+    "marketing-harness": "./bin/cli.js"
+  },
+  "scripts": {
+    "ask": "node ./bin/ask.js",
+    "test:mcp": "node ./tests/mcp/mcp-smoke.mjs",
+    "department": "node ./bin/department.js",
+    "mcp": "node ./bin/mcp.js",
+    "jobs": "node ./bin/jobs.js",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "node ./bin/cli.js dashboard",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node ./bin/cli.js dashboard",
+    "status": "node ./bin/cli.js status",
+    "mission": "node ./bin/cli.js run-mission",
+    "daily": "node ./bin/cli.js run-daily",
+    "report": "node ./bin/cli.js generate-report",
+    "dashboard": "node ./bin/cli.js dashboard"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "sharp": "^0.34.5",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
