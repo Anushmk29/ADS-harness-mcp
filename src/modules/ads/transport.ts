@@ -21,6 +21,8 @@ export class AdsTransport {
   private fetcher: typeof fetch;
   private refreshedTokens: Partial<Record<Platform, { token: string; expiresAt: number }>> = {};
   private refreshing: Partial<Record<Platform, Promise<string>>> = {};
+  /** Page access tokens derived from the Meta token; memory only, never logged or persisted. */
+  private pageTokens = new Map<string, { token: string; expiresAt: number }>();
   constructor(private options: ProviderOptions = {}) { this.fetcher = options.fetch ?? globalThis.fetch; }
   async token(platform: Platform): Promise<string> {
     const env = platform === 'meta' ? 'ADS_DIRECT_META_ACCESS_TOKEN' : platform === 'google' ? 'ADS_DIRECT_GOOGLE_ACCESS_TOKEN' : 'ADS_DIRECT_GA4_ACCESS_TOKEN';
@@ -55,9 +57,9 @@ export class AdsTransport {
     const seconds = retryAfter === null || retryAfter.trim() === '' ? NaN : Number(retryAfter);
     return Number.isFinite(seconds) ? Math.min(60_000, seconds * 1000) : delays[Math.min(delays.length - 1, Math.max(0, delays.length - retries))];
   }
-  private async request(platform: Platform, url: URL, method = 'GET', data?: any, retries?: number): Promise<any> {
+  private async request(platform: Platform, url: URL, method = 'GET', data?: any, retries?: number, tokenOverride?: string): Promise<any> {
     retries ??= this.isRead(url, method) ? 3 : 0;
-    const token = await this.token(platform);
+    const token = tokenOverride ?? await this.token(platform);
     const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
     if (platform === 'google') {
       const dev = process.env.ADS_DIRECT_GOOGLE_DEVELOPER_TOKEN;
@@ -80,7 +82,7 @@ export class AdsTransport {
       // Network error or timeout: only a read may be repeated; a write's outcome is unknown and goes to the journal.
       if (retries > 0 && this.isRead(url, method)) {
         await new Promise(resolve => setTimeout(resolve, this.retryDelay(retries!, null)));
-        return this.request(platform, url, method, data, retries - 1);
+        return this.request(platform, url, method, data, retries - 1, tokenOverride);
       }
       throw error;
     }
@@ -91,7 +93,7 @@ export class AdsTransport {
       if (retries > 0 && this.isRead(url, method) && (res.status === 429 || res.status >= 500)) {
         const delay = this.retryDelay(retries, res.headers.get('Retry-After'));
         if (delay) await new Promise(resolve => setTimeout(resolve, delay));
-        return this.request(platform, url, method, data, retries - 1);
+        return this.request(platform, url, method, data, retries - 1, tokenOverride);
       }
       const details = [result.error?.message ?? res.statusText, result.error?.error_user_msg,
         result.error?.error_subcode && `subcode ${result.error.error_subcode}`,
@@ -107,6 +109,19 @@ export class AdsTransport {
     const url = new URL(`https://graph.facebook.com/${version}/${path}`);
     for (const [k,v] of Object.entries(params)) if (v !== undefined) url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
     return url;
+  }
+  /**
+   * Page-scoped endpoints (lead forms, the Page's Instagram accounts) reject a user/system-user token
+   * with Meta error #190. Exchange it for that Page's token, which Meta returns only when the token has
+   * Page access. Cached in memory for 50 minutes; never written anywhere.
+   */
+  private async pageToken(pageId: string): Promise<string> {
+    const cached = this.pageTokens.get(pageId);
+    if (cached && cached.expiresAt > Date.now()) return cached.token;
+    const page = await this.request('meta', this.metaUrl(pageId, { fields: 'access_token' }));
+    if (typeof page.access_token !== 'string' || !page.access_token) throw new Error(`The Meta token has no Page access for ${pageId}; give the system user access to this Page`);
+    this.pageTokens.set(pageId, { token: page.access_token, expiresAt: Date.now() + 50 * 60_000 });
+    return page.access_token;
   }
   async verifyMetaObject(account: string, objectId: string): Promise<void> {
     const object = await this.request('meta', this.metaUrl(objectId, { fields: 'account_id' }));
@@ -195,7 +210,7 @@ export class AdsTransport {
     const account = a.accountId ? `act_${a.accountId.replace(/^act_/, '')}` : '';
     let path: string; let params: any = {}; let method = 'GET'; let data: any;
     switch (tool.action) {
-      case 'accounts': path = 'me/adaccounts'; params = { fields: 'id,name,currency,timezone_name,account_status' }; break;
+      case 'accounts': path = 'me/adaccounts'; params = { fields: 'id,name,currency,timezone_name,account_status,business{id,name}' }; break;
       case 'insights': path = `${a.objectId ?? account}/insights`; params = { level: a.level, fields: a.fields.join(','), time_range: { since: a.since, until: a.until }, breakdowns: a.breakdowns.join(','), time_increment: a.timeIncrement }; break;
       case 'targeting': path = 'search'; params = { ...a.params, type: a.type, q: a.q }; break;
       case 'list': case 'edge': path = `${a.parentId ?? account}/${tool.resource}`; params = { ...a.params, fields: a.fields.join(',') }; break;
@@ -209,7 +224,8 @@ export class AdsTransport {
     // Auth and request method may never be overridden through provider payloads.
     for (const key of ['access_token','appsecret_proof','method']) if (key in params || (data && key in data)) throw new Error(`Forbidden provider parameter: ${key}`);
     const url = this.metaUrl(path, params);
-    const first = await this.request('meta', url, method, data);
+    const pageToken = tool.parent === 'page' && a.parentId ? await this.pageToken(String(a.parentId)) : undefined;
+    const first = await this.request('meta', url, method, data, undefined, pageToken);
     if (method !== 'GET' || !Array.isArray(first.data)) return first;
     const rows = [...first.data]; let page = first; const seen = new Set<string>();
     while (page.paging?.next) {
@@ -217,7 +233,7 @@ export class AdsTransport {
       if (!cursor || seen.has(cursor)) throw new Error('Meta pagination did not advance');
       if (seen.size >= 1000) throw new Error('Report exceeds 1000 pages; request a smaller interval');
       seen.add(cursor); url.searchParams.set('after', cursor);
-      page = await this.request('meta', url); rows.push(...(page.data ?? []));
+      page = await this.request('meta', url, 'GET', undefined, undefined, pageToken); rows.push(...(page.data ?? []));
     }
     return { ...first, data: rows, paging: undefined };
   }

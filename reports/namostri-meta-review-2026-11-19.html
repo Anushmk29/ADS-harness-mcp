@@ -1,0 +1,270 @@
+<title>Namostri Meta Ads Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (max 980px) of report sections; tables scroll inside their own boxes. Namostri brand colours from config/business.yaml. */
+:root{
+  --bg:#f7f2e8; --surface:#fffdf8; --ink:#3b1f1a; --muted:#7a6457; --line:#e4d9c6;
+  --gold:#a8812f; --gold-soft:#efe1bd; --rose:#b4506a;
+  --good:#2f7a4f; --good-bg:#e3f1e7; --warn:#9a6a12; --warn-bg:#f7ebcf; --bad:#a63a2c; --bad-bg:#f6e0db;
+  --men:#6f86a8; --women:#b4506a; --unk:#bcae9c;
+  --f-display:"Fraunces",Georgia,"Times New Roman",serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1311; --surface:#251a17; --ink:#f1e6d6; --muted:#b9a593; --line:#3d2f29;
+  --gold:#d9b45e; --gold-soft:#3d3020; --rose:#e07f98;
+  --good:#7fcf9c; --good-bg:#1f3327; --warn:#e6bb5c; --warn-bg:#3a2e17; --bad:#f09484; --bad-bg:#3d221d;
+  --men:#93a9cc; --women:#e07f98; --unk:#6d5f53; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1311; --surface:#251a17; --ink:#f1e6d6; --muted:#b9a593; --line:#3d2f29;
+  --gold:#d9b45e; --gold-soft:#3d3020; --rose:#e07f98;
+  --good:#7fcf9c; --good-bg:#1f3327; --warn:#e6bb5c; --warn-bg:#3a2e17; --bad:#f09484; --bad-bg:#3d221d;
+  --men:#93a9cc; --women:#e07f98; --unk:#6d5f53; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);font-weight:650;text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(30px,5vw,44px)} h2{font-size:26px} h3{font-size:18px;font-family:var(--f-body);font-weight:600}
+p{margin:0;max-width:68ch} section{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.meta{color:var(--muted);font-size:14px}
+.num,td.n,th.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--line);padding-bottom:28px}
+.lede{font-size:18px;max-width:70ch}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font-family:var(--f-mono);font-size:24px;font-weight:500}
+.kpi span{font-size:13px;color:var(--muted)}
+.alert{background:var(--warn-bg);border-left:4px solid var(--warn);padding:16px 18px;border-radius:4px;display:flex;flex-direction:column;gap:6px}
+.alert h3{color:var(--warn)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap}
+td.n,th.n{text-align:right;white-space:nowrap} tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.p-good{background:var(--good-bg);color:var(--good)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-mute{background:var(--gold-soft);color:var(--muted)}
+.findings{display:flex;flex-direction:column;gap:14px}
+.f{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+.f .tag{grid-row:span 3;align-self:start}
+.f h3,.f p,.f .ev{grid-column:2;min-width:0}
+.f .ev{font-size:13.5px;color:var(--muted)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.chart svg{width:100%;height:auto;display:block}
+.chart svg text{fill:var(--ink);font-family:var(--f-body)} .chart svg .mute{fill:var(--muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px} .two>*{min-width:0}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+ol.plan,ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;max-width:72ch}
+.funnel{display:flex;flex-direction:column;gap:6px}
+.frow{display:grid;grid-template-columns:150px 1fr 90px;gap:10px;align-items:center;font-size:14px}
+.fbar{height:22px;background:var(--gold);border-radius:3px;min-width:3px}
+.frow .num{text-align:right}
+@media (max-width:480px){.frow{grid-template-columns:110px 1fr 70px}}
+.score{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.score .big{font-family:var(--f-display);font-size:56px;line-height:1;color:var(--gold)}
+footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:8px}
+footer p{max-width:none}
+a{color:var(--gold)} :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Meta Ads · act_2087398631820901 · NAMOSTRI</div>
+  <h1>Namostri Meta Ads Review</h1>
+  <p class="meta">All campaigns from 17 Jun to 30 Oct 2026 (the last day anything spent). Data pulled live on 19 Nov 2026 through the ads harness. Amounts in ₹, Meta's default attribution.</p>
+  <p class="lede">₹8,475 across 8 campaigns produced 2 tracked website orders (₹7,598) and 167 WhatsApp chats. Website sales came from one campaign. WhatsApp chats were the cheapest result you bought, at ₹5–11 each. The money that went nowhere went to men, Audience Network clicks, ₹2 reach and campaigns stopped after 2–6 days.</p>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><b>₹8,475</b><span>Total spend, 8 campaigns, Jun–Oct</span></div>
+  <div class="kpi"><b>2 · ₹7,598</b><span>Website orders · revenue</span></div>
+  <div class="kpi"><b>0.90×</b><span>Return on ad spend (₹4,237 per order)</span></div>
+  <div class="kpi"><b>167</b><span>WhatsApp chats started</span></div>
+  <div class="kpi"><b>5.07 lakh</b><span>People reached (5.77 lakh impressions)</span></div>
+</div>
+
+<div class="alert" role="note">
+  <h3>One campaign is still switched on</h3>
+  <p><b>New Sales Campaign 23th october</b> is <b>Active</b>, not paused. It only stopped spending on 30 Oct because the account hit its spending limit. As soon as you raise the limit or add funds, it will start spending ₹250 a day again. If you also switch on Engagement 2.0 (₹500/day), the account spends ₹750 a day. That would use up the ₹5,000 monthly budget in your business profile in under 7 days. Decide which one runs before you top up.</p>
+</div>
+
+<section>
+  <div class="eyebrow">Campaign by campaign</div>
+  <h2>What each campaign bought</h2>
+  <div class="chart" id="spendChart" aria-label="Spend per campaign"></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Campaign</th><th>Goal</th><th>Ran</th><th class="n">Days</th><th class="n">Spend</th><th>What it got</th><th class="n">Cost per result</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>New Sales Campaign 23th october <span class="pill p-warn">Active</span></td><td>Sales (purchase)</td><td>28 Sep – 30 Oct</td><td class="n">10</td><td class="n">₹2,090</td><td>2 orders, ₹7,598; 244 page views</td><td class="n">₹1,045/order</td><td><span class="pill p-good">Only seller</span></td></tr>
+      <tr><td>THREE PHASE LEADS CAMPAIGN</td><td>Sales (optimised for add to cart / view content)</td><td>17 – 20 Jun</td><td class="n">4</td><td class="n">₹1,695</td><td>751 page views, 19 add to carts, 0 orders</td><td class="n">₹89/cart</td><td><span class="pill p-bad">Cheap clicks</span></td></tr>
+      <tr><td>Sales_11oct_500_Vid+Carousels</td><td>Sales (purchase)</td><td>11 – 14 Oct</td><td class="n">4</td><td class="n">₹1,649</td><td>95 page views, 2 add to carts, 0 orders</td><td class="n">₹17/page view</td><td><span class="pill p-bad">Overpaid</span></td></tr>
+      <tr><td>Engagement_namostri_20th october</td><td>Instagram profile visits</td><td>17 Sep – 23 Oct</td><td class="n">8</td><td class="n">₹1,057</td><td>1,653 link clicks, 25 chats, 40 saves, 11 comments</td><td class="n">₹0.64/click</td><td><span class="pill p-good">Best attention</span></td></tr>
+      <tr><td>Awareness_Namostri_audience_21st september</td><td>Reach</td><td>21 – 26 Sep</td><td class="n">6</td><td class="n">₹847</td><td>3.55 lakh people, 113 link clicks</td><td class="n">₹2.39/1,000 reached</td><td><span class="pill p-bad">No attention</span></td></tr>
+      <tr><td>LEAD_Namostri_2ND October</td><td>WhatsApp chats</td><td>2 – 7 Oct</td><td class="n">5</td><td class="n">₹831</td><td>74 chats (26 went to a 2nd message), 2 leads</td><td class="n">₹11.23/chat</td><td><span class="pill p-good">Cheap chats</span></td></tr>
+      <tr><td>NAMOSTRI | India | Video | Leads | July 2026</td><td>WhatsApp chats</td><td>7 – 8 Jul</td><td class="n">2</td><td class="n">₹300</td><td>63 chats (21 went to a 2nd message)</td><td class="n">₹4.76/chat</td><td><span class="pill p-good">Cheapest result</span></td></tr>
+      <tr><td>NMS [ Sales campaogn] {3-5 august}</td><td>Catalog sales, cost cap</td><td>3 – 15 Aug</td><td class="n">10</td><td class="n">₹6</td><td>52 impressions, 3 clicks</td><td class="n">–</td><td><span class="pill p-mute">Never delivered</span></td></tr>
+      <tr><td>Namostri Engagement Campaign 2.0 <span class="pill p-mute">Paused</span></td><td>Post engagement → WhatsApp</td><td>Not started</td><td class="n">0</td><td class="n">₹0</td><td>3 ads in Meta review</td><td class="n">–</td><td><span class="pill p-mute">New</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">"Days" counts days with any spend. Page views are landing page views (the site actually loaded). Chats are WhatsApp conversations started within 7 days of an ad click.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Findings</div>
+  <h2>What the numbers say</h2>
+  <div class="findings">
+    <div class="f"><span class="pill p-good tag">Worked</span><h3>One Instagram-only video campaign made every sale</h3><p>New Sales Campaign ran only on Instagram, with the "A little embroidery, a lot of elegance" video and a Shop Now button. Both orders came on 27 and 28 Oct. ₹1,045 per order is under the ₹1,900 you can afford per order, if the 50% margin in your business profile is right; that margin is still marked to confirm. Meta rated the video Above average for quality and engagement.</p><p class="ev">Two orders is too few to call it a winner. The harness creative check returned "wait for evidence" for the same reason.</p></div>
+    <div class="f"><span class="pill p-good tag">Worked</span><h3>WhatsApp chats cost ₹5–11 each, the cheapest thing you bought</h3><p>The two WhatsApp campaigns spent ₹1,131 and started 137 chats, ₹8.26 on average. 47 of them came from WhatsApp Status placements, which cost only ₹146. About a third of the people sent a second message.</p><p class="ev">Meta can't see whether a chat became an order, so cost per WhatsApp order is unknown. Count orders that came through WhatsApp for each campaign and that number becomes your real cost per order.</p></div>
+    <div class="f"><span class="pill p-bad tag">Leak</span><h3>56% of spend reached men</h3><p>Every ad set is set to women, but Advantage+ audience was allowed to treat gender as a suggestion, so Meta widened it. Men got ₹4,742 of ₹8,475. Women started 114 of the 164 chats where gender is known; men started 50. Engagement 2.0 already has this switched off.</p><p class="ev">Both website orders were credited to men aged 18–24. That could be gifting or a shared phone. Two orders can't show a pattern either way.</p></div>
+    <div class="f"><span class="pill p-bad tag">Leak</span><h3>Audience Network bought 59% of page views and no orders</h3><p>Placements outside Facebook and Instagram (Audience Network) took ₹848 and gave 680 of the 1,154 landing page views, but no orders. The June carousel's 13.7% click rate is the usual sign of accidental taps in apps and games.</p><p class="ev">Three Phase (June) left all placements on, including Audience Network, Messenger and Threads.</p></div>
+    <div class="f"><span class="pill p-bad tag">Leak</span><h3>₹2 reach that nobody watched</h3><p>The awareness campaign bought 4.1 lakh impressions at ₹2.07 per thousand. Only 0.03% clicked, people watched for 1 second on average, and 7% stayed past 3 seconds. Uttar Pradesh took 3.8 lakh of the account's 5.8 lakh impressions, most of them from this campaign.</p></div>
+    <div class="f"><span class="pill p-bad tag">Leak</span><h3>The October carousel cost ₹667 per thousand impressions</h3><p>In Sales_11oct, Meta put ₹1,530 of ₹1,649 on the suit-set carousel at ₹667 per 1,000 impressions, about 10 times the account's usual cost. It got 42 page views and no orders. The videos in the same campaign got page views for ₹2–3 each. The campaign was paused after 4 days, before Meta could shift the budget.</p></div>
+    <div class="f"><span class="pill p-warn tag">Structure</span><h3>Nine campaigns, none given a full week</h3><p>The longest any campaign spent was 10 days, and most ran 2–6. The harness playbook says to judge only after at least 7 days. Meta's learning phase needs about 50 results a week. At ₹4,237 per order that's impossible on this budget, but WhatsApp chats can reach it: 50 chats at ₹8 is about ₹400 a week.</p></div>
+    <div class="f"><span class="pill p-warn tag">Structure</span><h3>Optimised for the wrong events</h3><p>Three Phase optimised for add to cart and view content, so Meta found people who add to cart and leave: 19 carts, 0 orders. The August catalog campaign used a cost cap that was set too low, so it never won auctions and spent ₹6 in 10 days.</p></div>
+    <div class="f"><span class="pill p-warn tag">Audience</span><h3>Younger than the buyer you want</h3><p>18–24-year-olds got 36% of spend (₹3,084). Your profile names 27–38 as the core buyer. Most ad sets allowed ages 18–65.</p></div>
+    <div class="f"><span class="pill p-mute tag">Fine</span><h3>No creative fatigue</h3><p>Frequency stayed between 1.0 and 1.4 everywhere. No ad ran long enough for people to tire of it, so the problem is reaching the right people, not worn-out creative.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Who saw the ads</div>
+  <h2>Gender, age and placement</h2>
+  <div class="two">
+    <div class="chart"><h3 style="margin-bottom:10px">Spend and chats by gender</h3><div id="genderChart"></div>
+      <div class="legend"><span><i style="background:var(--women)"></i>Women</span><span><i style="background:var(--men)"></i>Men</span><span><i style="background:var(--unk)"></i>Unknown</span></div></div>
+    <div class="chart"><h3 style="margin-bottom:10px">Spend by age</h3><div id="ageChart"></div></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Placement</th><th class="n">Spend</th><th class="n">Impressions</th><th class="n">Link clicks</th><th class="n">Page views</th><th class="n">Carts</th><th class="n">Orders</th><th class="n">Chats</th></tr></thead>
+    <tbody>
+      <tr><td>Instagram feed</td><td class="n">₹2,859</td><td class="n">94,441</td><td class="n">660</td><td class="n">249</td><td class="n">1</td><td class="n">0</td><td class="n">14</td></tr>
+      <tr><td>Instagram Reels</td><td class="n">₹2,660</td><td class="n">414,390</td><td class="n">1,224</td><td class="n">130</td><td class="n">4</td><td class="n">0</td><td class="n">63</td></tr>
+      <tr><td>Facebook feed</td><td class="n">₹970</td><td class="n">6,172</td><td class="n">158</td><td class="n">61</td><td class="n">5</td><td class="n">0</td><td class="n">20</td></tr>
+      <tr><td>Audience Network (apps)</td><td class="n">₹848</td><td class="n">6,186</td><td class="n">948</td><td class="n">680</td><td class="n">12</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Facebook Reels</td><td class="n">₹488</td><td class="n">8,849</td><td class="n">292</td><td class="n">19</td><td class="n">1</td><td class="n">0</td><td class="n">17</td></tr>
+      <tr><td>Instagram Stories</td><td class="n">₹425</td><td class="n">10,170</td><td class="n">91</td><td class="n">11</td><td class="n">2</td><td class="n">2</td><td class="n">6</td></tr>
+      <tr><td>WhatsApp Status</td><td class="n">₹146</td><td class="n">31,263</td><td class="n">141</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">47</td></tr>
+      <tr><td>Everything else</td><td class="n">₹78</td><td class="n">5,931</td><td class="n">13</td><td class="n">4</td><td class="n">0</td><td class="n">0</td><td class="n">0</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">Both orders were credited to Instagram Stories even though the ad ran across Instagram. Meta gives the credit to the last placement someone saw. Android phones carried 84% of spend; iPhones 16%.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Website funnel</div>
+  <h2>Where visitors dropped off</h2>
+  <div class="chart"><div class="funnel" id="funnel"></div></div>
+  <p>Two in three link clicks never became a page view. That points to accidental taps (Audience Network) or a slow page on mobile data. Of the people who reached the site, 2.2% added to cart, and 2 of 25 carts became orders.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Every ad</div>
+  <h2>Ad-level results</h2>
+  <div class="tbl"><table id="adsTable">
+    <thead><tr><th>Ad</th><th>Campaign</th><th>Format</th><th class="n">Spend</th><th class="n">Impr.</th><th class="n">Link CTR</th><th class="n">3-sec views</th><th class="n">Page views</th><th class="n">Carts</th><th class="n">Orders</th><th class="n">Chats</th><th>Meta ranking (quality / engagement / conversion)</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="meta">"3-sec views" is the share of impressions where the video was watched for 3 seconds or more (how well the opening holds people). The engagement video held best at 30%; the awareness videos held 4–7%. Rankings show "–" where Meta had too little data to rank.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Account health</div>
+  <h2>Score against the harness Meta checklist</h2>
+  <div class="score"><span class="big">45</span><div><b>out of 100 · grade D</b><p class="meta">My estimate, using the harness checklist weights. Items I couldn't check from the API are marked.</p></div></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Area (weight)</th><th class="n">Score</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Tracking (30%)</td><td class="n">60</td><td>Pass: the "visit website" pixel is firing (last event 18 Nov) and records view content, add to cart, checkout and purchase. Not checked: Conversions API, domain verification, event match quality.</td></tr>
+      <tr><td>Creative (30%)</td><td class="n">50</td><td>Pass: video, carousel and image are all used, and there are vertical Reels videos. Warning: 1–4 ads per ad set, 0.61% account link click rate, 3-sec hold of 4–30%.</td></tr>
+      <tr><td>Structure (20%)</td><td class="n">35</td><td>Fail: 9 campaigns for ₹8.5k, none run 7 days. Fail: cost cap stopped delivery. Warning: two sales campaigns optimised for events short of a purchase.</td></tr>
+      <tr><td>Audience (20%)</td><td class="n">25</td><td>Fail: the gender setting let 56% of spend go to men. Fail: Audience Network left on. Not checked or missing: no customer exclusions, no lookalike audiences built from customers or chats.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="eyebrow">What to do</div>
+  <h2>Fixes in order</h2>
+  <div class="tbl"><table>
+    <thead><tr><th class="n">#</th><th>Fix</th><th>Impact</th><th>Effort</th><th>What it moves</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Decide on New Sales Campaign before you add funds: keep it as your one sales campaign, or pause it. It is your only seller, so the harness playbook says not to switch off a top spender lightly.</td><td><span class="pill p-bad">High</span></td><td>2 min</td><td>Stops surprise spend</td></tr>
+      <tr><td class="n">2</td><td>Make WhatsApp the main goal. Run Engagement 2.0 or a click-to-WhatsApp campaign for at least 7 days without edits, with WhatsApp Status included.</td><td><span class="pill p-bad">High</span></td><td>Low</td><td>Cost per chat, learning phase</td></tr>
+      <tr><td class="n">3</td><td>Keep a simple log of orders that came through WhatsApp, by week and by campaign.</td><td><span class="pill p-bad">High</span></td><td>5 min/week</td><td>Real cost per order</td></tr>
+      <tr><td class="n">4</td><td>In every sales and leads ad set, turn off Advantage+ audience's gender widening, or set it to women only.</td><td><span class="pill p-warn">Medium</span></td><td>2 min</td><td>Spend on your buyer</td></tr>
+      <tr><td class="n">5</td><td>Remove Audience Network from all placements.</td><td><span class="pill p-warn">Medium</span></td><td>2 min</td><td>Wasted clicks</td></tr>
+      <tr><td class="n">6</td><td>Run 1 sales campaign and 1 WhatsApp campaign, not new ones every week. Sales optimised for Purchase only, no cost cap until you have 20+ orders.</td><td><span class="pill p-warn">Medium</span></td><td>Low</td><td>Learning, cost per order</td></tr>
+      <tr><td class="n">7</td><td>Use the openings that held people: the engagement video (30% 3-sec hold, 2.66% link click rate) and the New Sales video. Drop the two awareness videos.</td><td><span class="pill p-warn">Medium</span></td><td>Medium</td><td>Click rate, hold rate</td></tr>
+      <tr><td class="n">8</td><td>Turn on the Conversions API through the Shopify Facebook &amp; Instagram app, and check the domain is verified.</td><td><span class="pill p-warn">Medium</span></td><td>15 min</td><td>Order tracking accuracy</td></tr>
+      <tr><td class="n">9</td><td>Raise the minimum age to 22–25 in sales ad sets, or watch the 18–24 split weekly.</td><td><span class="pill p-mute">Low</span></td><td>2 min</td><td>Spend on core buyer</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="eyebrow">Next 30 days</div>
+  <h2>A plan that fits ₹5,000 a month</h2>
+  <ol class="plan">
+    <li><b>Week 1:</b> Fix billing. Decide on New Sales Campaign (fix 1). Turn off gender widening and Audience Network (fixes 4–5). Lower Engagement 2.0 to about ₹100 a day so the month's budget lasts, then switch it on.</li>
+    <li><b>Week 2:</b> Leave it alone for 7 full days. Log WhatsApp orders. Read cost per chat and how many chats reach a second message.</li>
+    <li><b>Week 3:</b> Keep the ad that gets the cheapest chats. Add one new video with an opening built like the engagement video.</li>
+    <li><b>Week 4:</b> Work out cost per WhatsApp order. If it's under ₹1,900, raise the budget 20–25%. If not, change the offer or the copy, not the audience.</li>
+  </ol>
+  <h3>Watch every week</h3>
+  <ul class="plain">
+    <li>Cost per WhatsApp chat: target under ₹12</li>
+    <li>Share of chats that reach a 2nd message: about a third now, aim for 40%</li>
+    <li>WhatsApp orders per week, and spend divided by those orders</li>
+    <li>Share of spend on women: target over 90%</li>
+    <li>3-second hold rate on new videos: target over 25%</li>
+    <li>Cost per website order: target under ₹1,200 (the target in your business profile)</li>
+  </ul>
+</section>
+
+<footer>
+  <p><b>How this was made.</b> These ads harness tools, read-only: <span class="num">meta_ads_list_campaign / adset / ad / pixels</span>, <span class="num">meta_ads_insights</span> at account, campaign and ad level, with age, gender, placement, region and device breakdowns, <span class="num">ads_compare_performance</span> and <span class="num">ads_analyze_creative</span>. Guidance came from the harness knowledge files <i>meta-analyze-optimize-scale</i>, <i>meta-audit-checklist</i>, <i>ppc-math</i> and <i>report-template</i>. Nothing in the account was changed.</p>
+  <p><b>Limits.</b> Meta's own attribution; orders not checked against Shopify. Region data can't carry conversions. WhatsApp orders are invisible to Meta. The 50% margin and ₹5,000 budget come from the business profile and are still marked to confirm. The ₹1,900 affordable cost per order is ₹3,799 average order × 50%.</p>
+</footer>
+</div>
+
+<script>
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt=n=>"₹"+n.toLocaleString("en-IN");
+function hbars(el,rows,max,opts={}){
+  const W=640,rowH=opts.rowH||30,labW=opts.labW||200,H=rows.length*rowH+8;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  rows.forEach((r,i)=>{const y=i*rowH+4,w=Math.max(2,(W-labW-90)*r.v/max);
+    s+=`<text x="0" y="${y+rowH/2+4}" font-size="13">${r.l}</text>`;
+    s+=`<rect x="${labW}" y="${y+5}" width="${w}" height="${rowH-12}" rx="2" fill="${r.c}"></rect>`;
+    s+=`<text x="${labW+w+8}" y="${y+rowH/2+4}" font-size="12.5" class="mute">${r.t}</text>`;});
+  el.innerHTML=s+"</svg>";
+}
+function draw(){
+  const G=css("--good"),B=css("--bad"),M=css("--muted"),Wm=css("--women"),Mn=css("--men"),U=css("--unk"),Gold=css("--gold");
+  hbars(document.getElementById("spendChart"),[
+    {l:"New Sales (Sep–Oct)",v:2090,c:G,t:"₹2,090 · 2 orders"},
+    {l:"Three Phase (Jun)",v:1695,c:B,t:"₹1,695 · 0 orders"},
+    {l:"Sales Vid+Carousel (Oct)",v:1649,c:B,t:"₹1,649 · 0 orders"},
+    {l:"Engagement (Sep–Oct)",v:1057,c:Gold,t:"₹1,057 · 1,653 clicks"},
+    {l:"Awareness (Sep)",v:847,c:B,t:"₹847 · 3.55 lakh reach"},
+    {l:"WhatsApp Leads (Oct)",v:831,c:G,t:"₹831 · 74 chats"},
+    {l:"WhatsApp Leads (Jul)",v:300,c:G,t:"₹300 · 63 chats"},
+    {l:"Catalog Sales (Aug)",v:6,c:M,t:"₹6 · stalled"}],2090,{labW:190});
+  const g=document.getElementById("genderChart"),W=320;
+  const seg=(y,parts,lab)=>{let x=0,o=`<text x="0" y="${y-6}" font-size="12.5" class="mute">${lab}</text>`;const tot=parts.reduce((a,p)=>a+p.v,0);
+    parts.forEach(p=>{const w=W*p.v/tot;o+=`<rect x="${x}" y="${y}" width="${w}" height="26" fill="${p.c}"></rect>`;if(w>40)o+=`<text x="${x+6}" y="${y+18}" font-size="12" fill="#fff" style="fill:#fff">${p.t}</text>`;x+=w});return o};
+  g.innerHTML=`<svg viewBox="0 0 ${W} 120" role="img">${seg(22,[{v:3695,c:Wm,t:"₹3,695"},{v:4742,c:Mn,t:"₹4,742"},{v:37,c:U,t:""}],"Spend")}${seg(84,[{v:114,c:Wm,t:"114 chats"},{v:50,c:Mn,t:"50"},{v:3,c:U,t:""}],"WhatsApp chats")}</svg>`;
+  hbars(document.getElementById("ageChart"),[
+    {l:"18–24",v:3084,c:Gold,t:"₹3,084"},{l:"25–34",v:2410,c:Gold,t:"₹2,410"},{l:"35–44",v:1481,c:Gold,t:"₹1,481"},
+    {l:"45–54",v:919,c:Gold,t:"₹919"},{l:"55–64",v:384,c:Gold,t:"₹384"},{l:"65+",v:196,c:Gold,t:"₹196"}],3084,{labW:60,rowH:28});
+}
+const F=[["Impressions",577402],["Link clicks",3527],["Page views",1154],["Add to cart",25],["Checkout",15],["Payment info",4],["Orders",2]];
+document.getElementById("funnel").innerHTML=F.map(([l,v],i)=>{const w=Math.max(0.6,100*Math.log10(v+1)/Math.log10(577403));const pct=i?` <span class="meta">(${(100*v/F[i-1][1]).toFixed(i===1?2:1)}%)</span>`:"";return `<div class="frow"><span>${l}${pct}</span><div class="fbar" style="width:${w}%"></div><span class="num">${v.toLocaleString("en-IN")}</span></div>`}).join("")+`<p class="meta" style="margin-top:6px">Bar lengths use a log scale so the small steps stay visible; percentages are of the step above.</p>`;
+const ADS=[["New Sales (Sep–Oct)","ad video 1","Video",2024,36126,0.87,15.8,227,4,2,4,"Above / Above / Avg"],["Sales Vid+Carousel (Oct)","Suit Set Carousels","Carousel",1530,2294,2.18,null,42,1,0,0,"Avg / – / –"],["Three Phase (Jun)","CAROUSEL BASED","Carousel",1159,7059,13.74,null,710,19,0,0,"– / – / –"],["Engagement (Sep–Oct)","namostri_engagement_video","Video",969,57281,2.66,30.2,22,0,0,19,"Above / – / –"],["Awareness (Sep)","Awarwness video 2","Video",792,382991,0.03,6.8,33,0,0,0,"– / – / –"],["Three Phase (Jun)","REEL BASED","Video",536,12042,0.55,18.1,41,0,0,0,"– / – / –"],["WhatsApp Leads (Oct)","LEAD_Namostri_video 3","Video",403,6991,0.72,14.7,2,0,0,34,"– / – / –"],["WhatsApp Leads (Jul)","Namostri | Reel 01 | India | Women","Video",300,33477,0.48,17.6,0,0,0,63,"– / – / –"],["WhatsApp Leads (Oct)","LEAD_Namostri_video 2","Video",255,3660,0.66,24.3,0,0,0,18,"– / – / –"],["WhatsApp Leads (Oct)","LEAD_Namostri_video 1","Video",173,1193,1.51,18.5,0,0,0,22,"– / – / –"],["Sales Vid+Carousel (Oct)","Video 1","Video",84,1322,5.22,38.1,43,0,0,0,"Bottom 10% / Bottom 35% / Above"],["Engagement (Sep–Oct)","namostri_engagement_video (copy)","Video",71,4696,2.36,14.5,5,0,0,5,"– / – / –"],["New Sales (Sep–Oct)","ad video 1 (2nd copy)","Video",65,685,2.63,15.8,17,0,0,0,"– / – / –"],["Awareness (Sep)","Awarwness video 1","Video",56,26556,0.02,3.7,2,0,0,0,"– / – / –"],["Sales Vid+Carousel (Oct)","Video 2","Video",33,291,6.19,27.8,10,1,0,1,"– / – / –"],["Engagement (Sep–Oct)","namostri_engagement_video (copy 2)","Video",17,677,2.51,24.2,0,0,0,1,"– / – / –"],["Catalog Sales (Aug)","Catalog display ads for Sales","Catalog",6,52,5.77,null,0,0,0,0,"– / – / –"],["Sales Vid+Carousel (Oct)","Video 3","Video",1,9,0,null,0,0,0,0,"– / – / –"]];
+document.querySelector("#adsTable tbody").innerHTML=ADS.map(a=>`<tr><td>${a[1]}</td><td>${a[0]}</td><td>${a[2]}</td><td class="n">${fmt(a[3])}</td><td class="n">${a[4].toLocaleString("en-IN")}</td><td class="n">${a[5].toFixed(2)}%</td><td class="n">${a[6]==null?"–":a[6]+"%"}</td><td class="n">${a[7]}</td><td class="n">${a[8]}</td><td class="n">${a[9]}</td><td class="n">${a[10]}</td><td>${a[11]}</td></tr>`).join("");
+draw();
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});}catch(e){}
+</script>

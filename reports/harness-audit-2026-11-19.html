@@ -1,0 +1,286 @@
+<title>Ads Harness Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of audit sections; tables scroll inside their own box; verdict first, evidence after. */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --fg:#1b2129; --muted:#5b6570; --line:#dde1e5;
+  --accent:#1f5f8b; --ok:#1d7a4a; --okbg:#e3f3ea; --part:#9a6a00; --partbg:#fbf0d4;
+  --bad:#b23a2e; --badbg:#fbe5e2; --none:#59636e; --nonebg:#e9ecef;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161b; --surface:#1a2027; --fg:#e4e8ec; --muted:#9aa5b0; --line:#2c343d;
+  --accent:#6fb0dc; --ok:#5fcf93; --okbg:#173527; --part:#e3b54a; --partbg:#3a2f12;
+  --bad:#f08376; --badbg:#3d1d1a; --none:#a8b2bc; --nonebg:#262d35; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161b; --surface:#1a2027; --fg:#e4e8ec; --muted:#9aa5b0; --line:#2c343d;
+  --accent:#6fb0dc; --ok:#5fcf93; --okbg:#173527; --part:#e3b54a; --partbg:#3a2f12;
+  --bad:#f08376; --badbg:#3d1d1a; --none:#a8b2bc; --nonebg:#262d35; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+main{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+h1{font-size:2rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:650;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0;max-width:70ch}
+section{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.08rem;color:var(--fg)}
+.muted{color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-size:1.7rem;font-weight:650;font-variant-numeric:tabular-nums}
+.tile span{font-size:.85rem;color:var(--muted)}
+@media (max-width:700px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.answers{display:grid;gap:10px}
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:16px}
+.answer h3{font-size:.98rem}
+@media (max-width:640px){.answer{grid-template-columns:minmax(0,1fr);gap:6px}}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:600;font-size:.8rem;letter-spacing:.03em;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font-size:.74rem;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.ok{color:var(--ok);background:var(--okbg)} .part{color:var(--part);background:var(--partbg)}
+.bad{color:var(--bad);background:var(--badbg)} .none{color:var(--none);background:var(--nonebg)}
+.bar{display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid var(--line);min-width:140px}
+.bar i{display:block;height:100%}
+.bar .m{background:var(--accent)} .bar .c{background:var(--part)} .bar .x{background:var(--nonebg)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+ol,ul{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:6px;max-width:74ch}
+.callout{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 6px 6px 0}
+.score{display:flex;gap:20px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.score b{font-size:3rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.score b small{font-size:1.2rem;color:var(--muted);font-weight:500}
+.score div{flex:1;min-width:0}
+.ex{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ex article{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:700px){.ex{grid-template-columns:minmax(0,1fr)}}
+.ex .who{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+footer{font-size:.85rem;color:var(--muted)}
+</style>
+
+<main>
+<header style="display:flex;flex-direction:column;gap:10px">
+  <span class="eyebrow">Audit · 19 Nov 2026 · Meta only · account act_2087398631820901</span>
+  <h1>Ads Harness Audit</h1>
+  <p class="lede">This audit covers what the MCP harness did in testing, what Claude did, what still needs Claude, and what stands between this system and a paying client. Every number comes from the 131-check feature test, the repository code or the 17–19 Nov sessions. Wherever a figure is an estimate, it says so.</p>
+</header>
+
+<div class="tiles">
+  <div class="tile"><b>130/130</b><span>checks passed, 1 skipped (no audiences exist)</span></div>
+  <div class="tile"><b>72</b><span>distinct tools exercised, out of 87 Meta and shared tools</span></div>
+  <div class="tile"><b>23</b><span>unsafe requests blocked by code, with no help from Claude</span></div>
+  <div class="tile"><b>0</b><span>real competitor-research results produced</span></div>
+</div>
+
+<section>
+  <h2>The six questions, answered</h2>
+  <div class="answers">
+    <div class="answer"><h3>What share of the work does MCP do?</h3><p>For <b>doing</b>, MCP does almost all of it. It made every one of the 131 Meta reads, writes and safety checks. For <b>thinking</b>, it does almost none. Claude decided every recommendation, every report finding and every fix. By pipeline stage, MCP owns 5 of 10 stages outright, shares 1 and owns none of the 4 judgement stages (see the workload table). A single overall percentage would be invented, so this page doesn't give one.</p></div>
+    <div class="answer"><h3>How much value does MCP add?</h3><p>It adds a lot of reliability and very little insight. The harness makes Meta access safe, repeatable and auditable: approval gates, budget caps, forced PAUSED on creation, and credential redaction. It produces no conclusions of its own. The 19 Nov ad review is an example. Every number in it came through MCP, and every finding in it, such as "56% of spend went to men", was worked out by Claude.</p></div>
+    <div class="answer"><h3>What happens if Claude is removed?</h3><p>The plumbing keeps working: the dashboard, approvals, scheduled KPI snapshots, number-only weekly reports, fatigue checks, backups and health checks. The brain stops. Nothing turns data into advice unless a DeepSeek or OpenRouter key is added, and that path is <b>untested</b>. The scheduler is currently <code>SCHEDULER=off</code>.</p></div>
+    <div class="answer"><h3>Does it really reduce Claude's workload?</h3><p><b>Partly.</b> It removes API plumbing, safety checks and record-keeping from Claude's job. It does not remove analysis, recommendations or report writing. The analysis tools also expect Claude to fetch the metrics and pass them in, so Claude still moves the data between tools.</p></div>
+    <div class="answer"><h3>What has to change?</h3><p>Move the judgement into the harness:</p><ul><li>fetch-and-analyse pipelines;</li><li>a rule-based findings engine;</li><li>ranked next steps;</li><li>a generated client report.</li></ul><p>A cheap model writes the narrative, and Claude only answers questions and approves changes. The roadmap at the end gives the order.</p></div>
+    <div class="answer"><h3>What's stopping a paid launch?</h3><p>Four gaps:</p><ol><li>Competitor and market research are stubs that return hard-coded sample data.</li><li>No client-ready report exists without Claude.</li><li>No next-step or strategy engine exists.</li><li>The system is set up for one business and has only been proven on one small account.</li></ol></div>
+  </div>
+</section>
+
+<section>
+  <h2>1. Features and capabilities</h2>
+  <p>The ads server has 139 tools: 73 Meta, 52 Google Ads, 10 harness <code>ads_*</code> tools, 2 department tools and 2 skill tools. The analytics server has 57: 53 GA4 and 4 shared. Google Ads and GA4 were out of scope.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Area</th><th>What it does</th><th>Evidence</th><th>Status</th></tr></thead>
+    <tbody>
+    <tr><td>Meta reads</td><td>Covers accounts, campaigns, ad sets, ads, creatives, labels, pixels, the Instagram account, lead forms, leads, catalogs, products, budget schedules, business Pages and users, insights at 4 levels with daily, age/gender and placement breakdowns, and targeting search.</td><td class="num">39 of 40 passed, 1 skipped</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Meta planning</td><td>Checks account readiness, validates a campaign spec and prepares a paused launch with an approval brief.</td><td class="num">3 of 3</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Meta writes</td><td>Creates, updates and deletes every object type. Also covers image and video upload, conversion events, budget schedules, Page posts, lead forms and test leads.</td><td class="num">26 of 26 in dry run. Real writes on 18 Nov (campaign, ad set, 3 creatives, 3 ads) went through dashboard approval.</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Approval flow</td><td>Each exact change waits in a queue until a person approves it on the dashboard.</td><td>Used for real on 18 Nov. Not re-run on 19 Nov on purpose. Covered by unit tests.</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Safety guards</td><td>Blocks:<ul><li>switching things on, and numeric statuses;</li><li>budgets or bids above ₹500, and negative budgets;</li><li>multiplier budget schedules and special ad categories;</li><li>deprecated placements and attribution windows;</li><li>tokens inside arguments;</li><li>accounts and objects outside the allowlist;</li><li>writes without an operation ID, and unknown keys;</li><li>launches that aren't READY.</li></ul></td><td class="num">23 of 23</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Creative fatigue</td><td>Compares two mature periods and suggests a review. It never pauses anything automatically.</td><td class="num">2 of 2</td><td><span class="pill part">Partial</span><br><span class="muted">Claude has to supply the metrics</span></td></tr>
+    <tr><td>Compare and reconcile</td><td>Gives a blended ROAS without double-counting, refuses to mix currencies, and keeps platform, GA4 and business views apart.</td><td class="num">3 of 3</td><td><span class="pill part">Partial</span><br><span class="muted">Claude has to supply the metrics</span></td></tr>
+    <tr><td>Recommendations</td><td>Saves a recommendation record. It never runs it.</td><td class="num">1 of 1</td><td><span class="pill part">Partial</span><br><span class="muted">Stores text Claude writes. Generates nothing.</span></td></tr>
+    <tr><td>Monitoring</td><td>Takes a 90-day baseline, then runs a read-only check every day at 08:00.</td><td class="num">2 of 2</td><td><span class="pill ok">Works</span></td></tr>
+    <tr><td>Optimisation skill</td><td><code>skill_campaign_optimization</code></td><td>Returned PENDING: "Supply explicit campaign operations".</td><td><span class="pill part">Partial</span><br><span class="muted">Runs a list it is given. Decides nothing.</span></td></tr>
+    <tr><td>Marketing knowledge</td><td>46 playbook files (4,719 lines) behind a router, plus a learnings memory.</td><td class="num">18 of 18, and the <code>../.env</code> escape was blocked</td><td><span class="pill ok">Works</span><br><span class="muted">Static reference text</span></td></tr>
+    <tr><td>Scheduled jobs</td><td>Daily KPI snapshot, weekly and monthly reports, weekly fatigue check, health check, nightly backup, ops digest and approval chaser.</td><td>Code read only. Not run.</td><td><span class="pill none">Untested</span><br><span class="muted">Scheduler is off</span></td></tr>
+    <tr><td>Decode (format research)</td><td>Scrapes competitor ads through Apify or reads your own ads, then sorts them by format with an LLM.</td><td class="num">4 of 4 start-gate checks</td><td><span class="pill none">Untested</span><br><span class="muted">No keys, so it has never produced a result</span></td></tr>
+    <tr><td>Market and competitor skills</td><td><code>skill_market_research</code> and <code>skill_competitor_analysis</code></td><td>The code returns hard-coded data such as <code>activeAdsFound: 14</code>, and live mode disables both skills.</td><td><span class="pill bad">Not real</span></td></tr>
+    <tr><td>Report builder</td><td>Weekly and monthly reports: one headline of spend, leads, cost per lead and sessions, plus totals against the previous period.</td><td>Code read only (61 lines)</td><td><span class="pill part">Partial</span><br><span class="muted">Numbers only. No findings or next steps.</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>2. MCP vs Claude workload</h2>
+  <p>This counts who owned each stage of a typical job, such as "review my ads and tell me what to do". Ownership comes from what happened in the 17–19 Nov sessions and from the code.</p>
+  <div class="legend"><span><i style="background:var(--accent)"></i>MCP harness</span><span><i style="background:var(--part)"></i>Claude</span><span><i style="background:var(--nonebg);border:1px solid var(--line)"></i>Nobody (missing)</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Stage</th><th style="min-width:160px">Who did it</th><th>Evidence</th></tr></thead>
+    <tbody>
+    <tr><td>Data collection</td><td><div class="bar"><i class="m" style="width:100%"></i></div></td><td>All 40 Meta reads were MCP tool calls. MCP handled pagination, retries, the Page token and redaction.</td></tr>
+    <tr><td>Processing and normalising</td><td><div class="bar"><i class="m" style="width:100%"></i></div></td><td>Money is handled in paise, schemas are strict and dedup is built into the tools.</td></tr>
+    <tr><td>Safety and compliance</td><td><div class="bar"><i class="m" style="width:100%"></i></div></td><td>MCP enforced all 23 refusals. Claude couldn't have bypassed them.</td></tr>
+    <tr><td>Execution (writes)</td><td><div class="bar"><i class="m" style="width:100%"></i></div></td><td>The 18 Nov creates. Claude prepared each spec, MCP sent it after the user approved it.</td></tr>
+    <tr><td>Storage and audit trail</td><td><div class="bar"><i class="m" style="width:100%"></i></div></td><td>Operations, records and the approval history.</td></tr>
+    <tr><td>Analysis (calculations)</td><td><div class="bar"><i class="m" style="width:50%"></i><i class="c" style="width:50%"></i></div></td><td>The fatigue, compare and reconcile tools calculate, but Claude must fetch the metrics and pass them in. Even shares are a rough estimate.</td></tr>
+    <tr><td>Reasoning and diagnosis</td><td><div class="bar"><i class="c" style="width:100%"></i></div></td><td>Every finding in the 19 Nov review: gender skew, Audience Network waste, the cheapest WhatsApp chats.</td></tr>
+    <tr><td>Recommendations and decisions</td><td><div class="bar"><i class="c" style="width:100%"></i></div></td><td>The harness only stores recommendation text. The optimisation skill infers nothing.</td></tr>
+    <tr><td>Report writing</td><td><div class="bar"><i class="c" style="width:100%"></i></div></td><td>The review page was written entirely by Claude. The built-in report is one headline line.</td></tr>
+    <tr><td>Competitor and market research</td><td><div class="bar"><i class="x" style="width:100%"></i></div></td><td>The stubs are disabled and Decode has no keys. Nothing real exists yet.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Measured numbers from the 19 Nov testing</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Measure</th><th>MCP harness</th><th>Claude</th><th>Note</th></tr></thead>
+    <tbody>
+    <tr><td>Operations against Meta or the policy</td><td class="num">131 of 131</td><td class="num">0</td><td>Claude made no direct Graph API calls.</td></tr>
+    <tr><td>Code that ran during the test</td><td class="num">8,374 lines of TS in 74 files</td><td class="num">about 380 lines</td><td>Claude's lines: a 256-line test driver, small helper scripts, a 36-line unit test and about 35 lines of transport fix.</td></tr>
+    <tr><td>Bugs found</td><td class="num">0 self-reported</td><td class="num">5 diagnosed</td><td>Page token #190, missing business ID, WhatsApp enum values, placement map overwriting targeting, and UNCERTAIN ops on timeouts.</td></tr>
+    <tr><td>Bugs fixed</td><td class="num">n/a</td><td class="num">2 fixed, 1 still open</td><td>Page token and business ID are fixed. <code>MESSAGING</code>/<code>MESSAGES</code> is still in <code>contracts.ts:139</code>.</td></tr>
+    <tr><td>Report findings</td><td class="num">0</td><td class="num">all</td><td>Every finding in the 19 Nov review.</td></tr>
+    <tr><td>Tokens saved</td><td colspan="3">Not measured. No token counter ran in these sessions, so this audit gives no figure.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>3. Real examples</h2>
+  <div class="ex">
+    <article><span class="who">MCP heavy lifting</span><h3>Reading the whole account</h3><p>One call per object type returned campaigns, ad sets, ads, insights and breakdowns, with paging, retries and redaction handled. Claude only named the tool and the account.</p><p class="muted">MCP share of this outcome: almost all of it.</p></article>
+    <article><span class="who">MCP heavy lifting</span><h3>Stopping unsafe changes</h3><p>A ₹600 budget, an ACTIVE status and a token pasted into the arguments were all refused by code before anything reached Meta. That guarantee doesn't depend on Claude behaving well.</p><p class="muted">MCP share: all of it.</p></article>
+    <article><span class="who">MCP heavy lifting</span><h3>Building Engagement 2.0 safely</h3><p>Claude wrote the specs. MCP validated them, forced PAUSED, queued each one for the user's approval, created it and read it back.</p><p class="muted">MCP share: the execution and safety half.</p></article>
+    <article><span class="who">Claude had to step in</span><h3>The 19 Nov ad review</h3><p>MCP supplied the raw insights. Claude worked out that 56% of spend went to men, that Audience Network brought 59% of page views and no orders, and that WhatsApp chats cost ₹5–11. Claude then wrote the whole report.</p><p class="muted">MCP share: the data only. The value came from Claude.</p></article>
+    <article><span class="who">Claude had to step in</span><h3>Page reads failing with #190</h3><p>The harness sent the system-user token to Page endpoints, so the reads failed. Claude traced the cause, added a Page-token swap to <code>transport.ts</code>, wrote 3 tests and rebuilt.</p><p class="muted">MCP share: none. This was a harness defect.</p></article>
+    <article><span class="who">Claude had to step in</span><h3>"Optimise my campaigns"</h3><p><code>skill_campaign_optimization</code> returned PENDING and asked for explicit operations. Deciding what to change is left to whoever calls it.</p><p class="muted">MCP share: it would only carry out Claude's decisions.</p></article>
+  </div>
+</section>
+
+<section>
+  <h2>4. Without Claude</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Keeps working</th><th>Stops</th><th>Needs building</th></tr></thead>
+    <tbody><tr>
+      <td><ul>
+        <li>Dashboard, approval queue and manual approvals</li>
+        <li>Daily KPI snapshot and the number-only weekly and monthly report (once the scheduler is on, untested)</li>
+        <li>Weekly fatigue check</li>
+        <li>Health check, backups and the approval chaser</li>
+        <li>Read-only monitoring</li>
+        <li>All safety rules</li>
+      </ul></td>
+      <td><ul>
+        <li>Any written analysis or diagnosis</li>
+        <li>Recommendations and next steps</li>
+        <li>Building campaign specs and launches</li>
+        <li>Choosing tools for a free-form question</li>
+        <li>Decode format sorting (it needs an LLM)</li>
+        <li>Fixing integration bugs</li>
+      </ul></td>
+      <td><ul>
+        <li>A findings engine (rules plus thresholds)</li>
+        <li>A ranked next-step generator</li>
+        <li>A client report generator</li>
+        <li>A DeepSeek or OpenRouter key and a tested run of the built-in runner (<code>bin/ask.js</code>)</li>
+        <li>Real competitor data</li>
+      </ul></td>
+    </tr></tbody>
+  </table></div>
+  <p class="callout">The harness was designed to run without Claude. It already has its own LLM runner with DeepSeek and OpenRouter in <code>LLM_ORDER</code>. Neither key is set, so nothing has proven the system runs without Claude yet.</p>
+</section>
+
+<section>
+  <h2>5. Efficiency compared with Claude alone</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Task</th><th>Claude alone (raw Graph API)</th><th>Claude with the harness</th></tr></thead>
+    <tbody>
+    <tr><td>Read an account</td><td>Hand-write each URL, field list, paging loop and token, and redact errors.</td><td>One tool call per object.</td></tr>
+    <tr><td>Create a campaign safely</td><td>Rely on Claude remembering every rule. A slip could spend money.</td><td>Code enforces the caps, PAUSED status and approval.</td></tr>
+    <tr><td>Audit history</td><td>None, unless Claude writes it.</td><td>A durable record of every operation and approval.</td></tr>
+    <tr><td>Analyse and recommend</td><td>Claude does all of it.</td><td>Claude still does all of it. <b>No saving here.</b></td></tr>
+    <tr><td>Recurring checks</td><td>Someone has to ask every time.</td><td>Scheduled jobs exist (untested).</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Time and tokens weren't measured, so the comparison is qualitative. The full feature test took about 2 minutes of harness run time. Most of the session time went to Claude writing the test and fixing defects.</p>
+</section>
+
+<section>
+  <h2>6. Weaknesses seen in testing</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Problem</th><th>Severity</th><th>Fix</th></tr></thead>
+    <tbody>
+    <tr><td>1</td><td>The market and competitor skills return hard-coded sample data (<code>web-research-mcp.ts</code>).</td><td><span class="pill bad">Blocker</span></td><td>Replace them with Meta Ad Library API and Apify pipelines, or delete them.</td></tr>
+    <tr><td>2</td><td>No harness-side reasoning. Findings, recommendations and next steps all come from the LLM caller.</td><td><span class="pill bad">Blocker</span></td><td>Add a rule-based findings engine (see section 8).</td></tr>
+    <tr><td>3</td><td>The built-in report is one headline line, and it measures leads and cost per lead even though Namostri sells (purchases and ROAS).</td><td><span class="pill bad">Blocker</span></td><td>Make report metrics follow the business type and add findings and actions.</td></tr>
+    <tr><td>4</td><td>Analysis tools need metrics passed in, so the caller has to fetch and reshape the data.</td><td><span class="pill part">High</span></td><td>Add <code>analyze_account(period)</code> tools that fetch the data themselves.</td></tr>
+    <tr><td>5</td><td>Decode has never produced a result, puts <code>APIFY_TOKEN</code> in the URL query string, and uses actor IDs the code itself marks as fragile.</td><td><span class="pill part">High</span></td><td>Send the token in a header, set the keys and run it end to end.</td></tr>
+    <tr><td>6</td><td>Meta integration bugs: the Page token (fixed), the business ID (fixed), the WhatsApp enum values (open) and the placement map overwriting targeting (open).</td><td><span class="pill part">High</span></td><td>Fix the open ones and add a live contract test per Meta objective.</td></tr>
+    <tr><td>7</td><td>Network timeouts to graph.facebook.com left 2 operations UNCERTAIN on 18 Nov.</td><td><span class="pill part">High</span></td><td>Read back by name automatically before retrying, and resolve UNCERTAIN operations by themselves.</td></tr>
+    <tr><td>8</td><td>The scheduler and alerts are off and have never been run.</td><td><span class="pill part">Medium</span></td><td>Turn them on for one client and watch a week.</td></tr>
+    <tr><td>9</td><td>The system is set up for a single business (one <code>business.yaml</code> with CONFIRM guesses).</td><td><span class="pill part">Medium</span></td><td>Per-client deploys (<code>deploy/</code> exists) and an onboarding form for margins and targets.</td></tr>
+    <tr><td>10</td><td>The local copy isn't a git repo, so the fixes aren't versioned or sent upstream.</td><td><span class="pill none">Low</span></td><td>Clone it properly and open a PR for the transport fix.</td></tr>
+    <tr><td>11</td><td>Google Ads and GA4 are untested, and only one small account has been tried (₹8.5k lifetime spend, no audiences).</td><td><span class="pill none">Scope</span></td><td>Test on a second, larger account before you promise it to anyone.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>7. Commercial readiness</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Can it reliably deliver…</th><th>Today</th><th>Why</th></tr></thead>
+    <tbody>
+    <tr><td>Comprehensive marketing reports</td><td><span class="pill part">With Claude only</span></td><td>The data is solid. The written report needs Claude.</td></tr>
+    <tr><td>Competitor research and comparisons</td><td><span class="pill bad">No</span></td><td>The stubs are fake and Decode is unproven.</td></tr>
+    <tr><td>Market and audience insights</td><td><span class="pill part">Partial</span></td><td>Age, gender and placement breakdowns work. The interpretation is Claude's.</td></tr>
+    <tr><td>Strategies and actionable suggestions</td><td><span class="pill part">With Claude only</span></td><td>The knowledge files help Claude. The harness generates nothing.</td></tr>
+    <tr><td>Campaign recommendations</td><td><span class="pill part">Partial</span></td><td>Fatigue checks and saved records exist. The content comes from Claude.</td></tr>
+    <tr><td>Prioritised next steps and plans</td><td><span class="pill bad">No</span></td><td>No ranking or planning engine.</td></tr>
+    <tr><td>Business-specific recommendations</td><td><span class="pill part">Partial</span></td><td>The business profile exists, but its margins and targets are unconfirmed guesses.</td></tr>
+    <tr><td>Safe campaign execution with approval</td><td><span class="pill ok">Yes</span></td><td>Tested and used for real. This is the strongest part.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>8. Making MCP the main engine</h2>
+  <ol>
+    <li><b>Pipelines instead of single tools.</b> <code>account_review(period)</code> fetches everything, calculates and returns structured findings in one call, so Claude stops shuttling metrics between tools.</li>
+    <li><b>A findings engine as code.</b> Turn the checks Claude did by hand into rules with thresholds: gender skew from Advantage+, a placement with spend and no orders, cost per result above target, frequency and fatigue, learning-phase stalls. Each finding should carry its evidence numbers.</li>
+    <li><b>An action ranker.</b> Map each finding to proposed operations, ranked by expected impact × confidence ÷ risk, and save them as draft approvals.</li>
+    <li><b>A report generator.</b> Fill a fixed client template from the findings. A cheap model (DeepSeek) writes only the plain-English sentences. Then the scheduler can send it weekly without Claude.</li>
+    <li><b>Real competitor data.</b> Use the Meta Ad Library API and Apify, store snapshots, and compare formats and angles over time.</li>
+    <li><b>Claude's role.</b> It answers questions about the stored findings, explains them and drafts the approval brief. A person still approves every change.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Score and verdict</h2>
+  <div class="score">
+    <b>5.5<small>/10</small></b>
+    <div><p><b>Not ready to sell as a self-running product.</b> It is ready for one or two friendly pilot clients, with an operator running Claude and the pilot sold as "managed with AI tools". The safe-execution layer is good enough for clients now. The intelligence layer doesn't exist outside Claude yet.</p>
+    <p class="muted">The score balances strong plumbing and safety (about 9/10) against no reasoning layer, fake research and one-line reports (about 2/10).</p></div>
+  </div>
+  <h3>Roadmap, in priority order</h3>
+  <ol>
+    <li>Delete or flag the fake research skills so no client ever sees made-up numbers. <span class="muted">(days)</span></li>
+    <li>Fix the open Meta bugs: the WhatsApp enum, the placement map and automatic UNCERTAIN resolution. <span class="muted">(days)</span></li>
+    <li>Build the findings engine and <code>account_review</code> pipeline from the rules in the 19 Nov review. <span class="muted">(1–2 weeks)</span></li>
+    <li>Build the report generator with metrics that follow the business type, set a DeepSeek key, turn the scheduler on and run one week unattended. <span class="muted">(1 week)</span></li>
+    <li>Make competitor research real with Decode and the Ad Library, moving the token into a header. <span class="muted">(1 week)</span></li>
+    <li>Build the action ranker that feeds the approval queue. <span class="muted">(1–2 weeks)</span></li>
+    <li>Run a second, larger account plus Google Ads and GA4, then build per-client onboarding. <span class="muted">(2+ weeks)</span></li>
+  </ol>
+</section>
+
+<footer>Sources: <code>reports/feature-test-2026-11-19/results.json</code> (131 checks), repository code under <code>src/</code>, and the 17–19 Nov session record. Not measured: token use, timing for each stage, Google Ads, GA4 and scheduled jobs.</footer>
+</main>

@@ -1,0 +1,1059 @@
+{
+  "ranAt": "2026-11-19T06:49:20.891Z",
+  "account": "act_2087398631820901",
+  "results": [
+    {
+      "group": "Meta reads",
+      "feature": "List ad accounts",
+      "tool": "meta_ads_list_accounts",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"3694911a-3cac-49f9-88b5-683aad95bd92\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:46.388Z\",\"data\":{\"data\":[{\"id\":\"act_2087"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Provider versions",
+      "tool": "ads_provider_versions",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"f513151a-68bb-45be-bdc1-8079bff8662a\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"provider\":\"meta\",\"apiVersion\":\"v26.0\",\"accessModel\":[\"Limited\",\"Full\"],\"veri"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Meta capability map",
+      "tool": "meta_ads_capabilities",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"0d072595-52e7-49b2-a780-07cf398636b4\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"id\":\"awareness\",\"status\":\"UNVERIFIED\",\"evidence\":\"Requires paused-object acc"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List campaigns",
+      "tool": "meta_ads_list_campaign",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9a3281aa-5a78-4dfa-8e8d-607875016d26\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:47.256Z\",\"data\":{\"data\":[{\"id\":\"12025343"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one campaign",
+      "tool": "meta_ads_get_campaign",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"65830d90-05e5-451c-9aee-5cfc1a15794b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:47.635Z\",\"data\":{\"id\":\"12025343567909065"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List adsets",
+      "tool": "meta_ads_list_adset",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"78a871dd-f2c5-47b6-91f9-d01554759fe8\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:47.987Z\",\"data\":{\"data\":[{\"id\":\"12025343"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one adset",
+      "tool": "meta_ads_get_adset",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"acc24054-265e-4dc7-b43b-da83613c58b4\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:48.427Z\",\"data\":{\"id\":\"12025343578705065"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List ads",
+      "tool": "meta_ads_list_ad",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"6273ac4f-7232-4b1d-abc1-7d08b90456f3\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:48.779Z\",\"data\":{\"data\":[{\"id\":\"12025343"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one ad",
+      "tool": "meta_ads_get_ad",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5eef4af9-fda9-4eef-bcce-98960bb0b3a3\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:49.211Z\",\"data\":{\"id\":\"12025343618087065"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List creatives",
+      "tool": "meta_ads_list_creative",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"75abddf0-73a3-490a-a1e2-e6e2ee3a5951\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:49.684Z\",\"data\":{\"data\":[{\"id\":\"28404578"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one creative",
+      "tool": "meta_ads_get_creative",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"b5325ab2-ea8a-41ab-8e05-75909f61b21d\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:50.680Z\",\"data\":{\"id\":\"28404578175887707"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List audiences",
+      "tool": "meta_ads_list_audience",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"6c812cb3-5857-4a5b-a1eb-4d347c2d471e\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:51.056Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one audience",
+      "tool": "meta_ads_get_audience",
+      "expect": "ok",
+      "pass": null,
+      "detail": "No audiences on the account to fetch"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "List labels",
+      "tool": "meta_ads_list_label",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"eaaa9b53-c363-4335-a072-683af4169f39\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:51.621Z\",\"data\":{\"data\":[{\"id\":\"12024944"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get one label",
+      "tool": "meta_ads_get_label",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"a784b724-51e7-4d93-8720-dfd438c64d1c\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:52.236Z\",\"data\":{\"id\":\"12024944745632065"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Pixels",
+      "tool": "meta_ads_list_pixels",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"719b50c6-f12c-4f76-9aca-7e63b48bd05b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:52.650Z\",\"data\":{\"data\":[{\"id\":\"99427268"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Instagram accounts on the Page",
+      "tool": "meta_ads_list_instagram_accounts",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"e8a17c04-8ce2-4715-963f-05a2e09bdbe4\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:53.102Z\",\"data\":{\"data\":[{\"id\":\"17841473"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Pages owned by the business",
+      "tool": "meta_ads_list_pages",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5a4d8f50-3612-4c6a-a452-a2adf7277cd6\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:55.240Z\",\"data\":{\"data\":[{\"id\":\"79005886"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Business users",
+      "tool": "meta_ads_list_business_users",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"fcac2e4a-e661-4ab2-afe2-bbcded2af19f\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:56.219Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Catalogs (business)",
+      "tool": "meta_ads_list_catalog",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"ef5b358c-1a9e-4fdb-86ab-7e2b46174079\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:57.165Z\",\"data\":{\"data\":[{\"id\":\"15780743"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Get catalog",
+      "tool": "meta_ads_get_catalog",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"2f19b570-aaae-41cc-b3ea-f71d41d68500\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:58.676Z\",\"data\":{\"id\":\"1578074330612179\""
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Product sets",
+      "tool": "meta_ads_list_product_set",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"e634a251-81f3-49b9-bd36-784d2f52681f\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:59.076Z\",\"data\":{\"data\":[{\"id\":\"90447225"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Product feeds",
+      "tool": "meta_ads_list_product_feed",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"4516b215-ca19-4c5a-8bfe-fea64b2cf2ea\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:59.496Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Products",
+      "tool": "meta_ads_list_products",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"e67680de-c4e6-4558-b2e4-dc925d09ffe2\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:48:59.952Z\",\"data\":{\"data\":[{\"id\":\"26412492"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Lead forms (page)",
+      "tool": "meta_ads_list_lead_form",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"cadeba9d-c085-4f16-af6a-ba386e0461d8\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:03.476Z\",\"data\":{\"data\":[{\"id\":\"10244292"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Leads",
+      "tool": "meta_ads_list_leads",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"d6072c7a-61a5-455f-a837-ebf26b067e3a\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:03.898Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Test leads",
+      "tool": "meta_ads_list_test_leads",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"69540ddd-fcfb-4436-8d44-8fb33cc626fe\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:04.229Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Budget schedules",
+      "tool": "meta_ads_list_budget_schedules",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"8b9af7b7-d82f-4d8d-aaa5-147c8192d977\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:04.640Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, account level",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"7ea0faa1-ecc7-4666-90c7-7f13a283f7f7\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:05.115Z\",\"data\":{\"data\":[{\"spend\":\"8474."
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, campaign level",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"cb6dc680-ed61-4206-b562-1aba72021aff\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:05.994Z\",\"data\":{\"data\":[{\"spend\":\"1694."
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, adset level",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"7e130940-4cb4-41ee-9496-49425a4ccdd8\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:07.182Z\",\"data\":{\"data\":[{\"spend\":\"1158."
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, ad level",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"d67abc49-0a8b-4acb-bf8b-beac61675126\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:08.071Z\",\"data\":{\"data\":[{\"spend\":\"1158."
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, daily rows",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"8dab980b-432d-488b-94cd-0d5dc5067e38\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:10.342Z\",\"data\":{\"data\":[{\"spend\":\"63.58"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, age+gender breakdown",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5eb6b818-4b7b-4281-9acb-5dd16de08182\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:10.933Z\",\"data\":{\"data\":[{\"spend\":\"1243."
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, placement breakdown",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9bb1cb14-b645-47fd-af8e-5e20bc5c3329\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:11.609Z\",\"data\":{\"data\":[{\"spend\":\"811.5"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Insights, one campaign",
+      "tool": "meta_ads_insights",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"678a123d-4376-40f5-a71c-f8d2affe98d7\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:12.310Z\",\"data\":{\"data\":[{\"campaign_name"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Targeting search: interests",
+      "tool": "meta_ads_search_targeting",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9a99ad49-771d-4c46-b30e-5490f2da47af\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:13.266Z\",\"data\":{\"data\":[]}}}"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Targeting search: interest suggestions",
+      "tool": "meta_ads_search_targeting",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"c71b26f2-3bbf-4482-ba85-4b026fd7fdb2\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:13.680Z\",\"data\":{\"data\":[{\"id\":\"60030775"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Targeting search: locations",
+      "tool": "meta_ads_search_targeting",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"6928f9c2-d5c8-4247-bdec-d2ea1b36ea67\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:15.343Z\",\"data\":{\"data\":[{\"key\":\"1026363"
+    },
+    {
+      "group": "Meta reads",
+      "feature": "Targeting search: categories",
+      "tool": "meta_ads_search_targeting",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"177426e4-7f89-4d7a-ad76-6f293fd1c052\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:18.404Z\",\"data\":{\"data\":[{\"id\":\"60027143"
+    },
+    {
+      "group": "Meta planning",
+      "feature": "Account readiness check",
+      "tool": "meta_ads_readiness",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5f722ac6-f82e-4f72-b935-575d7d3114cd\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"provider\":\"meta\",\"accountId\":\"act_2087398631820901\",\"currency\":null,\"timezone"
+    },
+    {
+      "group": "Meta planning",
+      "feature": "Validate a campaign draft",
+      "tool": "meta_ads_validate_campaign",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"346c1232-cff4-4842-b45a-dfb7b34c3a0d\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"draftId\":\"feature-test-draft\",\"valid\":true,\"status\":\"VALIDATED\",\"capabilitySt"
+    },
+    {
+      "group": "Meta planning",
+      "feature": "Prepare a paused launch + approval brief",
+      "tool": "meta_ads_prepare_launch",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"a76d5bca-8f6f-479d-84b8-ab5bf5258957\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"draftId\":\"feature-test-launch\",\"valid\":true,\"status\":\"VALIDATED\",\"capabilityS"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create campaign",
+      "tool": "meta_ads_create_campaign",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"3a2c0228-9b54-4943-9e1e-0e342fe38fd5\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_campaign\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Update campaign (rename)",
+      "tool": "meta_ads_update_campaign",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"e151a4f4-b364-452d-8ac2-8365d328c1a3\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_update_campaign\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete campaign",
+      "tool": "meta_ads_delete_campaign",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"f92a4261-4177-4bca-b87c-d7d2f47b8ec3\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_campaign\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create ad set",
+      "tool": "meta_ads_create_adset",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"f23ba8fd-ad56-411c-8ec0-62d5875e9c1e\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_adset\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Update ad set",
+      "tool": "meta_ads_update_adset",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"82fe700e-a538-4f10-873e-3f5c7a27e055\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_update_adset\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete ad set",
+      "tool": "meta_ads_delete_adset",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"83e1a47d-a742-401f-855c-b11b57ea231b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_adset\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create ad",
+      "tool": "meta_ads_create_ad",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"6dee7f16-4b9e-470e-924c-aab0e0827ed8\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_ad\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"ft-m"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Update ad",
+      "tool": "meta_ads_update_ad",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"a772b4bd-1b6e-4b30-b8dd-58a50660e58b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_update_ad\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"ft-m"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete ad",
+      "tool": "meta_ads_delete_ad",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"47b3bd98-91fd-4414-ada9-7e3cf5ff0fc7\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_ad\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"ft-m"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create creative",
+      "tool": "meta_ads_create_creative",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"a6c4363e-8622-4f56-92a7-34daf66b2f1f\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_creative\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete creative",
+      "tool": "meta_ads_delete_creative",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"9a60c586-5481-4f5e-bcb1-30b68b3f81c5\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_creative\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create custom audience",
+      "tool": "meta_ads_create_audience",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"2f6f3c60-a8fb-49f4-85da-d50d72bf403f\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_audience\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Update audience",
+      "tool": "meta_ads_update_audience",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"f8e13665-4b64-47f7-b906-c38ea7f2fac5\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_update_audience\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete audience",
+      "tool": "meta_ads_delete_audience",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"fca919f1-be4d-4879-bf0f-1a3a5988c30e\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_audience\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\""
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Add users to audience",
+      "tool": "meta_ads_audience_add_users",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"62ecb74d-7e9a-4dd9-99f1-e4cf9ffaab08\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_audience_add_users\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operation"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create label",
+      "tool": "meta_ads_create_label",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"cf3fae64-cf3f-40f3-95c8-8d2ff9623076\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_label\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Update label",
+      "tool": "meta_ads_update_label",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"ddeefb28-fd46-426c-9a30-38af8c3ce50b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_update_label\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Delete label",
+      "tool": "meta_ads_delete_label",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"5e835601-6d40-485c-bb53-90c37ed32b0b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_delete_label\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Upload image",
+      "tool": "meta_ads_upload_image",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"8bcf4cf5-73da-4938-87e2-4413f8fb2a8c\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_upload_image\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Upload video",
+      "tool": "meta_ads_upload_video",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"b1c7255a-af3e-4358-8447-4772ca0e9027\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_upload_video\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId\":\"f"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Send conversion (CAPI) event",
+      "tool": "meta_ads_send_conversion_events",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"34ee5b3a-e24b-4295-9f53-a0ef71f522b9\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_send_conversion_events\",\"args\":{\"accountId\":\"act_2087398631820901\",\"opera"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create budget schedule",
+      "tool": "meta_ads_create_budget_schedule",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"f04b8f5e-ffaf-4592-beb5-d0d921d6b658\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_budget_schedule\",\"args\":{\"accountId\":\"act_2087398631820901\",\"opera"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Full paused launch (campaign+ad set+creative+ad)",
+      "tool": "ads_launch_meta",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Meta account readiness must be persisted and READY before launch",
+      "note": "Stops before dry-run because readiness has manual checks still open"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create Page post",
+      "tool": "meta_ads_create_page_post",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"1bebecc0-5de2-49fb-bdca-0b4a2dc08e91\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_page_post\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create lead form",
+      "tool": "meta_ads_create_lead_form",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"5a1a9552-bf6f-44a7-b5fb-19a0bb0d84ca\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_lead_form\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId"
+    },
+    {
+      "group": "Meta writes (dry-run)",
+      "feature": "Create test lead",
+      "tool": "meta_ads_create_test_lead",
+      "expect": "dryrun",
+      "pass": true,
+      "detail": "{\"taskId\":\"6850d708-dae1-4962-bd74-a3c1426a9a22\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"DRY_RUN\",\"output\":{\"status\":\"DRY_RUN\",\"tool\":\"meta_ads_create_test_lead\",\"args\":{\"accountId\":\"act_2087398631820901\",\"operationId"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Creative fatigue check (too little data)",
+      "tool": "ads_analyze_creative",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"230ddded-12b7-4f23-8df8-e723dd0e515e\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"adId\":\"120253436132360659\",\"recommendation\":\"WAIT_FOR_EVIDENCE\",\"reason\":\"Ins"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Creative fatigue check (mature data)",
+      "tool": "ads_analyze_creative",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"6aba985e-f7e7-40df-b9fb-fa2e1bfa0430\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"adId\":\"120253436132360659\",\"baselineCtr\":0.02,\"currentCtr\":0.0095,\"baselineCp"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Compare performance / blended ROAS",
+      "tool": "ads_compare_performance",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"c159a67f-bb00-4c80-b13e-7c10baf9c89e\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"source\":\"supplied_data\",\"currency\":\"INR\",\"since\":\"2026-06-01\",\"until\":\"2026-1"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Compare refuses mixed currencies",
+      "tool": "ads_compare_performance",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Normalize currency with an explicit FX source before comparison"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Reconcile measurement (platform vs orders)",
+      "tool": "ads_reconcile_measurement",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"e26398f6-0847-4caa-b31d-5c6237dcdf21\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"source\":\"reconciled_inputs\",\"synchronizedAt\":\"2026-11-19T06:49:19.242Z\",\"peri"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Save an evidence-backed recommendation",
+      "tool": "ads_create_recommendation",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"93285542-dd0f-40cd-a072-0e3810f88e4a\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"recommendationId\":\"feature-test-rec\",\"provider\":\"meta\",\"accountId\":\"act_20873"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Set up read-only daily monitoring",
+      "tool": "ads_schedule_monitoring",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"773eb284-facb-4b6e-9cce-d3ce0db352ff\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":{\"scheduleId\":\"feature-test-monitor\",\"provider\":\"meta\",\"accountId\":\"act_2087398"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Run a monitoring window now",
+      "tool": "meta_ads_run_monitoring",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"7bd40c8e-ca6f-4a24-85ba-26ae39785132\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"source\":\"live\",\"fetchedAt\":\"2026-11-19T06:49:19.290Z\",\"data\":{\"data\":[{\"campaign_id\":"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: meta_readiness",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"c01166de-3409-47f1-8e9f-7639aa686be2\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"provider\":\"meta\",\"accountId\":\"act_2087398631820901\",\"currency\":null,\"timezon"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: meta_campaign_draft",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"0145d313-e507-4a3c-9e81-42b8759be96f\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"draftId\":\"feature-test-draft\",\"valid\":true,\"status\":\"VALIDATED\",\"capabilityS"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: meta_launch",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9959594c-9ec1-43fb-9a12-df17bd0292f1\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"draftId\":\"feature-test-launch\",\"valid\":true,\"status\":\"VALIDATED\",\"capability"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: report",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"6ff1e83c-0dae-4e11-8287-ef77f5deecde\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"tool\":\"meta_ads_run_monitoring\",\"accountId\":\"act_2087398631820901\",\"data\":{\""
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: recommendation",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"96a79fef-3105-46c2-83f1-beb7682a3b4b\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"recommendationId\":\"feature-test-rec\",\"provider\":\"meta\",\"accountId\":\"act_2087"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: schedule",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"0cc3ec0d-2fa7-4ad8-8e5e-5f342ae0b326\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"scheduleId\":\"feature-test-monitor\",\"provider\":\"meta\",\"accountId\":\"act_208739"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Saved records: reconciliation",
+      "tool": "ads_list_records",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"7a4cac9d-c822-4a69-a3ca-530dbf834c97\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"source\":\"reconciled_inputs\",\"synchronizedAt\":\"2026-11-19T06:49:19.242Z\",\"per"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Approval queue / operation history",
+      "tool": "ads_list_operations",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"14888106-0e30-4817-93a4-50b6bf268727\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"status\":\"COMPLETED\",\"data\":[{\"id\":\"namostri-eng2-ad-pink-r2\",\"tool\":\"meta_ads_create_ad\",\"args\":{\"accountI"
+    },
+    {
+      "group": "Analysis & optimisation",
+      "feature": "Department skill: campaign optimisation",
+      "tool": "department_run",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"d6219b2e-7b28-4771-8181-dad7b3180f27\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"PENDING\",\"output\":{\"status\":\"PENDING\",\"success\":false,\"reason\":\"Supply explicit campaign operations with account IDs and evidenc"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Knowledge router + file list",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"3f6396f2-0f9b-4866-a332-d1251bd38400\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"router\":\"# Knowledge router (read this first)\\r\\n\\r\\nEverything in `knowledge/` is guidance: markdown the "
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/meta-audit-checklist.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5a9bb2cb-130d-4398-8ca8-24dce936edad\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/meta-audit-checklist.md\",\"content\":\"# Meta Ads Audit Checklist (Facebook / Instagram)\\r\\n\\r\\nMa"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/meta-analyze-optimize-scale.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"85447fa3-48c0-4048-bb8c-fe602a85e69c\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/meta-analyze-optimize-scale.md\",\"content\":\"# **How I Analyze, Optimize, and Scale Meta Ads in 2"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/meta-campaign-structures.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"95f901cc-b621-40ad-97f1-14c0533099ce\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/meta-campaign-structures.md\",\"content\":\"# **Every Meta Ads Campaign Structure Explained: Comple"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/ppc-math.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"34a81097-3429-4c16-b3fe-47c185fa0147\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/ppc-math.md\",\"content\":\"# PPC Math & A/B Test Design\\r\\n\\r\\nAlways show the formula and the plu"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/creative-and-copy.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"cec68a21-50d8-4515-bbea-f0db64d546c2\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/creative-and-copy.md\",\"content\":\"# Creative & Copy Frameworks (SaaS / B2B)\\r\\n\\r\\nGoal: produce"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/competitor-intel.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"7baf9daa-a6b8-4d5e-9a25-7186b475ebac\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/competitor-intel.md\",\"content\":\"# Competitor Ad Intelligence Playbook\\r\\n\\r\\n## Process\\r\\n1. I"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/report-template.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"ef6e31cc-62b3-4299-b4ec-9f4dd6405c19\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/report-template.md\",\"content\":\"# Performance Report Template (the detailed format)\\r\\n\\r\\nUse t"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/our-business-fit.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"5171d8a6-8eb5-4d2c-a6b9-7268178484aa\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/our-business-fit.md\",\"content\":\"# How the research applies to Pratap AI (read this first)\\r\\n\\r"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ads/b2b-paid-playbook.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9cb08698-0a40-4447-b433-f45e0c4cf409\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ads/b2b-paid-playbook.md\",\"content\":\"# SaaS / B2B Paid Advertising Playbook (Meta + Google)\\r\\n\\r\\n"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ops/diagnose.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9f4bba4c-659d-41d4-b547-9fc68b676090\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ops/diagnose.md\",\"content\":\"# Diagnose: find the cause before proposing a fix\\r\\n\\r\\nUse this when "
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ops/learning-loop.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"4aeec49e-0cc1-4cd8-b4e0-24e0bdaea582\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ops/learning-loop.md\",\"content\":\"# Learning loop: how the harness remembers what worked\\r\\n\\r\\nThe "
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read ops/review-panel.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"0502d0a5-b9f0-4a01-afa8-25a2d500ca10\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"ops/review-panel.md\",\"content\":\"# Review panel: test an offer, landing page or campaign brief again"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Read creative/SKILL.md",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"b093d3d1-cc06-480f-a127-983a1dd9409d\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"path\":\"creative/SKILL.md\",\"content\":\"---\\r\\nname: marketing-harness\\r\\ndescription: >-\\r\\n Master skill fo"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Path escape is blocked",
+      "tool": "skill_knowledge",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Unknown knowledge file; call without path for the router and file list"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Learnings memory: list",
+      "tool": "skill_learnings",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"ee240426-7565-4096-a0d5-4208f4010686\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"learnings\":[]}}"
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Learnings memory: retro",
+      "tool": "skill_learnings",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"9a1a4da8-20c5-4c7d-905c-12d74005194c\",\"department\":\"ads\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"window\":{\"days\":30,\"since\":\"2026-10-20T06:49:20.200Z\"},\"newLearnings\":[],\"stalledHypotheses\":[],\"ruledOut\""
+    },
+    {
+      "group": "Marketing knowledge",
+      "feature": "Same knowledge on analytics server",
+      "tool": "skill_knowledge",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"taskId\":\"b1aeabb4-cf5c-4537-8daf-83cbd5500ce1\",\"department\":\"analytics\",\"mode\":\"live\",\"status\":\"COMPLETED\",\"output\":{\"router\":\"# Knowledge router (read this first)\\r\\n\\r\\nEverything in `knowledge/` is guidance: markdow"
+    },
+    {
+      "group": "Safety",
+      "feature": "Switching a campaign ON through the API is blocked",
+      "tool": "meta_ads_update_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "API activation is disabled in v1; complete the shadow review and activate manually in the provider UI"
+    },
+    {
+      "group": "Safety",
+      "feature": "Switching an ad ON through the API is blocked",
+      "tool": "meta_ads_update_ad",
+      "expect": "refused",
+      "pass": true,
+      "detail": "API activation is disabled in v1; complete the shadow review and activate manually in the provider UI"
+    },
+    {
+      "group": "Safety",
+      "feature": "Numeric status values are blocked",
+      "tool": "meta_ads_update_adset",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Status must use a named provider value, not a numeric enum"
+    },
+    {
+      "group": "Safety",
+      "feature": "Budget above the ₹500 cap is blocked",
+      "tool": "meta_ads_update_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Budget/bid amount exceeds the configured per-write ceiling"
+    },
+    {
+      "group": "Safety",
+      "feature": "Bid above the cap is blocked",
+      "tool": "meta_ads_update_adset",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Budget/bid amount exceeds the configured per-write ceiling"
+    },
+    {
+      "group": "Safety",
+      "feature": "Zero/negative budget is blocked",
+      "tool": "meta_ads_update_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "daily_budget must be a positive safe integer in provider currency units"
+    },
+    {
+      "group": "Safety",
+      "feature": "Multiplier budget schedule is blocked",
+      "tool": "meta_ads_create_budget_schedule",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Multiplier budget schedules require an effective amount check; use an absolute budget schedule"
+    },
+    {
+      "group": "Safety",
+      "feature": "Special ad categories (housing/credit etc.) are blocked",
+      "tool": "meta_ads_create_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Regulated special-ad categories are blocked from self-service activation"
+    },
+    {
+      "group": "Safety",
+      "feature": "Deprecated placement is blocked",
+      "tool": "meta_ads_update_adset",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Payload contains a deprecated Meta placement or attribution window"
+    },
+    {
+      "group": "Safety",
+      "feature": "Deprecated attribution window is blocked",
+      "tool": "meta_ads_update_adset",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Payload contains a deprecated Meta placement or attribution window"
+    },
+    {
+      "group": "Safety",
+      "feature": "Tokens inside arguments are blocked",
+      "tool": "meta_ads_update_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Credentials must not be included in tool arguments"
+    },
+    {
+      "group": "Safety",
+      "feature": "Account outside the allowlist is blocked (write)",
+      "tool": "meta_ads_create_label",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Account/property is outside the configured allowlist"
+    },
+    {
+      "group": "Safety",
+      "feature": "Account outside the allowlist is blocked (read)",
+      "tool": "meta_ads_list_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Account/property is outside the configured allowlist"
+    },
+    {
+      "group": "Safety",
+      "feature": "CAPI events to a pixel not in allowedObjects are blocked",
+      "tool": "meta_ads_send_conversion_events",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Target object must be explicitly listed in allowedObjects"
+    },
+    {
+      "group": "Safety",
+      "feature": "Adding users to an audience not in allowedObjects is blocked",
+      "tool": "meta_ads_audience_add_users",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Target object must be explicitly listed in allowedObjects"
+    },
+    {
+      "group": "Safety",
+      "feature": "Budget schedule on a campaign not in allowedObjects is blocked",
+      "tool": "meta_ads_create_budget_schedule",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Parent Page/business/catalog is not in allowedObjects"
+    },
+    {
+      "group": "Safety",
+      "feature": "Page post without allowedObjects is blocked",
+      "tool": "meta_ads_create_page_post",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Target object must be explicitly listed in allowedObjects"
+    },
+    {
+      "group": "Safety",
+      "feature": "Live write without operationId is blocked",
+      "tool": "meta_ads_create_label",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Live writes require a stable operationId; reuse it when resuming the same operation"
+    },
+    {
+      "group": "Safety",
+      "feature": "Unknown argument keys are rejected (strict schema)",
+      "tool": "meta_ads_list_campaign",
+      "expect": "refused",
+      "pass": true,
+      "detail": "[ { \"code\": \"unrecognized_keys\", \"keys\": [ \"limit\" ], \"path\": [], \"message\": \"Unrecognized key(s) in object: 'limit'\" } ]"
+    },
+    {
+      "group": "Safety",
+      "feature": "Launch needs persisted READY readiness",
+      "tool": "ads_launch_meta",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Meta account readiness must be persisted and READY before launch"
+    },
+    {
+      "group": "Safety",
+      "feature": "Continue-launch needs a real PARTIAL launch",
+      "tool": "ads_continue_meta_launch",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Only a persisted PARTIAL Meta launch can be continued; UNCERTAIN launches require manual reconciliation"
+    },
+    {
+      "group": "Safety",
+      "feature": "Nothing from this test reached the approval queue",
+      "tool": "ads_list_operations",
+      "expect": "ok",
+      "pass": true,
+      "detail": "No ft-* operations pending"
+    },
+    {
+      "group": "Safety",
+      "feature": "Engagement 2.0 still PAUSED with the same budget after the run",
+      "tool": "meta_ads_get_campaign",
+      "expect": "ok",
+      "pass": true,
+      "detail": "{\"id\":\"120253435679090659\",\"name\":\"Namostri Engagement Campaign 2.0\",\"status\":\"PAUSED\",\"daily_budget\":\"50000\"}"
+    },
+    {
+      "group": "Decode (format research)",
+      "feature": "Decode own Meta ads",
+      "tool": "DecodeService.start",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Decode needs an LLM: DEEPSEEK_API_KEY+DEEPSEEK_MODEL or OPENROUTER_API_KEY+OPENROUTER_TEXT_MODEL",
+      "note": "Expected to refuse with the keys in .env today"
+    },
+    {
+      "group": "Decode (format research)",
+      "feature": "Decode competitor ads (Ad Library)",
+      "tool": "DecodeService.start",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Decode needs APIFY_TOKEN to scrape",
+      "note": "Expected to refuse with the keys in .env today"
+    },
+    {
+      "group": "Decode (format research)",
+      "feature": "Rejects a 1-letter query",
+      "tool": "DecodeService.start",
+      "expect": "refused",
+      "pass": true,
+      "detail": "Enter a brand, keyword or Ad Library URL to decode",
+      "note": "Expected to refuse with the keys in .env today"
+    },
+    {
+      "group": "Decode (format research)",
+      "feature": "Rejects platforms it does not support",
+      "tool": "DecodeService.start",
+      "expect": "refused",
+      "pass": true,
+      "detail": "[ { \"received\": \"tiktok\", \"code\": \"invalid_enum_value\", \"options\": [ \"meta_ads\", \"own_meta\" ], \"path\": [ \"platform\" ], \"message\": \"Invalid enum value. Expected 'meta_ads' | 'own_meta', received 'tikto",
+      "note": "Expected to refuse with the keys in .env today"
+    }
+  ]
+}
