@@ -3,6 +3,29 @@
 Paid-advertising tools for Meta Ads, Google Ads and GA4, with a local MCP server,
 dashboard, reviewed ad changes, creative generation and competitor-ad research.
 
+## What it does for you, and how far it goes
+
+The harness runs the weekly ad-account routine on its own. Code makes every number and
+decision, and it never changes a live ad without your approval. A language model (DeepSeek
+or OpenRouter, set in `.env`) is optional and only rewrites the wording of reports. Claude
+is not needed for the weekly routine. It is useful for one-off questions and new campaign
+strategy.
+
+| What it does | How it helps | Where it stops |
+|---|---|---|
+| **Daily KPI snapshot** for Meta, Google Ads and GA4 | Records spend and results each day. Results are leads or purchases plus revenue, depending on the `goal` set for each client in `config/ads-module.yaml`. | Only as accurate as the platform's tracking. If the pixel or conversions are wrong, the numbers are wrong. |
+| **Weekly findings** with 15 fixed rules (`ads_findings`, `job ads-review`) | Flags ad sets and ads that spend with no results (the 3x rule), cost above target or rising, falling ROAS, CPM spikes, learning-limited ad sets, saturated audiences, underspend, budget concentrated in a few places, creative fatigue, weak CTR and broken tracking. When there isn't enough data, it says "wait" instead of guessing. | **Meta only** for now; Google Ads has KPIs but no rules yet. Rules use set thresholds, not predictions. Without `targets.cpa`, it compares against the account's own average. |
+| **Ranked next steps** | Turns findings into up to 5 actions per week: pause, change budget by ±20%, or a manual step. They are ranked by spend at stake, confidence and risk. Pauses and budget changes become approval requests. If tracking looks broken, it suggests only fixing tracking. | It never applies a change itself. Every write needs your approval and must stay under the per-change budget limit, and anything new starts PAUSED. It does not build new campaigns, audiences or creatives. |
+| **Client report**, weekly and monthly (`job report weekly`) | Shows results vs the previous period and vs target, top findings, next steps, spend by campaign and work done. A branded page at `/api/console/reports/<id>/html` can be saved as PDF. | Written from fixed templates unless a model is set up. If the model's wording contains any number not in the data, the template is used instead. Reports go to the operator (dashboard or Telegram), not by email to the client. |
+| **Competitor ads** (`skill_competitor_ads`, `job competitor-watch`) | Pulls real ads from the Meta Ad Library through Apify. Code finds the longest-running ads, formats, CTAs, offers and landing domains. Each week it shows which competitor ads are new. A model may group ads into angles, and every angle must name real ad IDs. | Needs a paid Apify key (`COMPETITOR_API_KEY`). It shows what competitors run, not how much they spend or how well their ads do. Without a key it shows an error, never sample data. |
+| **Creative fatigue watch** (`job ads-fatigue`) | Flags ads whose frequency is rising while CTR falls, and proposes pausing them. | Overlaps with the fatigue rule in the weekly findings. |
+| **Ad changes with approval** (MCP tools, dashboard) | Claude or the dashboard can propose edits. Each one is stored with its exact payload, and only that exact payload can be approved and applied. | Dry-run until you turn on live mode for each platform and account. |
+| **Health check** (`job doctor`, `bin/cli.js doctor`) | Checks credentials, token expiry, targets, whether the pixel fired in the last 48 hours, the Apify key, and model fallback and budget. | It reports problems. It does not fix them. |
+
+**You still need to:** grant the Meta token `ads_read` and `ads_management` permissions,
+set `goal` and `targets` for each client, approve or decline proposed changes, decide
+creative and campaign strategy, and check results before sending a report to a client.
+
 ## Start here
 
 | I want to... | Open |
