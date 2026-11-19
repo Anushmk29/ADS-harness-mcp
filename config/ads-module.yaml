@@ -1,13 +1,22 @@
-# Per-client ads policy. Start in dry-run with no accounts; add the client's account ids
-# after access is granted, and verifiedAccounts only after a paused-object test.
+# Loaded when the ads/analytics module is used. Credentials belong in environment variables.
+# Provider amounts: Meta minor currency units; Google micros. This is a per-write
+# ceiling, not a promise of a total platform spend cap.
 mode: dry-run
 accounts:
-  meta: []
+  meta: ['2245143739365491']
   google: []
   ga4: []
+# Populated only after authenticated paused-object/property verification.
 verifiedAccounts:
   meta: []
   google: []
   ga4: []
 allowedObjects: []
 maxBudgetPerWrite: {}
+# What the ads are bought for: lead (cost per lead) or purchase (cost per purchase + ROAS).
+# Targets are in account currency and drive the findings rules and the report.
+goal: lead
+targets: {}   # e.g. { cpa: 400 } or { cpa: 400, roas: 3 }
+# Competitors watched weekly in the Meta Ad Library (needs COMPETITOR_API_KEY, an Apify token).
+# pageId (the Facebook Page ID) is exact; otherwise name/query is a keyword search.
+competitors: []   # e.g. [{ name: Acme, pageId: '1234567890', country: IN }]

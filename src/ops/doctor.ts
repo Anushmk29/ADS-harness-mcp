@@ -54,7 +54,10 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<Check[]> {
   const keyed = [['DEEPSEEK_API_KEY', 'deepseek', 'DEEPSEEK_MODEL'], ['OPENROUTER_API_KEY', 'openrouter', 'OPENROUTER_TEXT_MODEL']].filter(([key]) => env[key]);
   for (const [key, name, model] of keyed) if (!env[model]) add(`llm:${name}`, 'warn', `${key} set but ${model} unset; provider unused`);
   const llm = keyed.filter(([, , model]) => env[model]);
-  if (!llm.length) add('llm', 'fail', 'no usable LLM (DEEPSEEK_API_KEY+DEEPSEEK_MODEL or OPENROUTER_API_KEY+OPENROUTER_TEXT_MODEL)');
+  // Findings, actions and reports run without a model; it only words the report summary and names competitor angles.
+  if (!llm.length) add('llm', 'warn', 'no LLM: reports use template wording (set DEEPSEEK_API_KEY+DEEPSEEK_MODEL and/or OPENROUTER_API_KEY+OPENROUTER_TEXT_MODEL)');
+  else if (llm.length === 1) add('llm fallback', 'warn', `only ${llm[0][1]} configured; set the other provider so wording survives an outage`);
+  if (llm.length && !env.LLM_MONTHLY_BUDGET_USD) add('llm budget', 'warn', 'LLM_MONTHLY_BUDGET_USD unset; model spend is uncapped');
   if (options.live) for (const [key, name] of llm) await probe(`llm:${name}`, async () => {
     if (name === 'deepseek') { await getJson('https://api.deepseek.com/models', { headers: { authorization: `Bearer ${env[key]}` } }); return 'key accepted'; }
     const { data } = await getJson('https://openrouter.ai/api/v1/key', { headers: { authorization: `Bearer ${env[key]}` } });
@@ -94,6 +97,28 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<Check[]> {
     else if (options.live) await probe('ga4', async () => {
       await getJson(`https://analyticsdata.googleapis.com/v1beta/properties/${ga4Property}/metadata`, { headers: { authorization: `Bearer ${await transport.token('ga4')}` } });
       return `property ${ga4Property} readable`;
+    });
+  }
+  // Onboarding: what the findings engine judges against, and whether the conversion event it counts still fires.
+  if (accounts.meta?.length || accounts.google?.length) {
+    const goal = adsPolicy.goal ?? 'lead', targets = adsPolicy.targets ?? {};
+    if (!targets.cpa) add('ads targets', 'warn', `goal is ${goal} but targets.cpa is unset: findings compare against the account's own average, not the client's target`);
+    else if (goal === 'purchase' && !targets.roas) add('ads targets', 'warn', 'purchase goal without targets.roas: ROAS is reported but not judged');
+    else add('ads targets', 'ok', `goal ${goal}, target cost per ${goal} ${targets.cpa}${targets.roas ? `, ROAS ${targets.roas}` : ''}`);
+  }
+  if (options.live && accounts.meta?.length && env.ADS_DIRECT_META_ACCESS_TOKEN) for (const account of accounts.meta) await probe(`pixel ${account}`, async () => {
+    const v = env.META_API_VERSION || 'v26.0', id = String(account).replace(/^act_/, '');
+    const { data } = await getJson(`https://graph.facebook.com/${v}/act_${id}/adspixels?fields=name,last_fired_time&access_token=${env.ADS_DIRECT_META_ACCESS_TOKEN}`);
+    if (!data?.length) throw new Error('no pixel/dataset on the ad account: results cannot be tracked');
+    const fired = Math.max(...data.map((p: any) => Date.parse(p.last_fired_time ?? '') || 0));
+    if (!fired || now - fired > 2 * 86_400_000) throw new Error(`pixel has not fired in 48h (last: ${fired ? new Date(fired).toISOString().slice(0, 10) : 'never'})`);
+    return `${data.length} pixel(s), last fired ${Math.round((now - fired) / 3_600_000)}h ago`;
+  });
+  if ((adsPolicy.competitors ?? []).length) {
+    if (!env.COMPETITOR_API_KEY) add('competitors', 'warn', `${adsPolicy.competitors.length} competitor(s) configured but COMPETITOR_API_KEY unset; weekly watch is skipped`);
+    else if (options.live) await probe('competitors', async () => {
+      const { data } = await getJson('https://api.apify.com/v2/users/me', { headers: { authorization: `Bearer ${env.COMPETITOR_API_KEY}` } });
+      return `Apify key accepted (${data?.username ?? 'account'})`;
     });
   }
   await transport.close().catch(() => {});

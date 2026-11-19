@@ -20,12 +20,23 @@ const adsRun = async (ads: MarketingModule, capability: string, input: Record<st
   return output?.status === 'COMPLETED' && 'data' in output ? output.data : output;
 };
 
+// Why the weekly ads review proposed a change (operation ids are review-<rule>-<object>-<date>).
+const REVIEW_REASONS: Record<string, string> = {
+  kill_no_results: 'It spent more than 3x your target cost per result without a single result.',
+  adset_cpa_high: 'Its cost per result is well above target; less budget here, more for what works.',
+  spend_concentration: 'It takes most of the budget but brings few of the results.',
+  adset_winner: 'Its cost per result is well below target over enough results to trust; a 20% raise lets it grow without resetting learning.'
+};
+
 /** Plain-language title for an ads journal operation. */
 export function describeAdsOperation(op: any): { title: string; description: string } {
   const args = op.args ?? {};
   const object = args.objectId ? ` ${args.objectId}` : '';
-  if (/^meta_ads_update_/.test(op.tool) && args.data?.status === 'PAUSED') return { title: `Pause ${op.tool.replace('meta_ads_update_', '')}${object}?`, description: op.id.startsWith('fatigue-') ? 'Its results dropped more than 20% versus the week before (fewer clicks, higher cost per lead).' : 'Stop delivery of this item.' };
-  if (/^meta_ads_update_/.test(op.tool) && args.data?.daily_budget) return { title: `Change daily budget${object}`, description: `New daily budget: ${args.data.daily_budget} (account currency, minor units).` };
+  const reviewRule = /^review-([a-z_]+)-/.exec(op.id ?? '')?.[1];
+  const reason = reviewRule && REVIEW_REASONS[reviewRule];
+  if (/^meta_ads_update_/.test(op.tool) && args.data?.status === 'PAUSED') return { title: `Pause ${op.tool.replace('meta_ads_update_', '')}${object}?`, description: reason || (op.id.startsWith('fatigue-') ? 'Its results dropped more than 20% versus the week before (fewer clicks, higher cost per result).' : 'Stop delivery of this item.') };
+  // ponytail: Meta minor units /100; wrong for zero-decimal currencies (JPY, KRW).
+  if (/^meta_ads_update_/.test(op.tool) && args.data?.daily_budget) return { title: `Change daily budget${object} to ${args.data.daily_budget / 100}?`, description: reason || 'New daily budget in account currency.' };
   if (op.tool === 'ads_launch_meta') return { title: 'Launch a new Meta campaign (created paused)', description: 'Creates the campaign, ad set and ads paused so you can check them before anything spends.' };
   return { title: op.tool.replace(/_/g, ' '), description: `Account ${args.accountId ?? 'n/a'}${object}` };
 }

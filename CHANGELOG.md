@@ -2,6 +2,16 @@
 
 Newest first. Every change to tools, skills or `knowledge/` gets a line here. Refreshes of upstream guidance also update `knowledge/SOURCES.md`.
 
+## 2026-11-20: rules-based reviews, client reports, real competitor data
+Goal: the weekly loop (findings, next steps, client report) runs without Claude; a cheap model is optional and only words the report.
+- **Removed fake research.** Deleted the hard-coded `web-research-mcp` results, `skill_market_research`, `skill_competitor_analysis`, the Laya relevance filter and the template-skill (`live: false`) mechanism that only existed for them.
+- **Goal per client.** `ads-module.yaml` takes `goal: lead | purchase` and `targets: { cpa, roas }`. The KPI snapshot now stores Meta purchases and purchase revenue (and Google `conversions_value`); Google conversions count toward the goal metric. Reports and the fatigue check use the goal metric; daily ratios (CPL/ROAS) are no longer summed across days.
+- **Findings engine** (`modules/ads/findings.ts`, MCP tool `ads_findings`): ~15 fixed rules over the last 7 days vs the 7 before: 3x kill rule, cost vs target and trend, ROAS vs target, winners, spend concentration, learning limited, audience saturation, underspend, creative fatigue, weak CTR, CPM spike, broken or dropped tracking, and "not enough data, wait". Falls back to the account's own baseline cost when no target is set.
+- **Action ranker** (`modules/ads/actions.ts`): turns findings into ranked pause / ±20% budget / manual steps. The new `ads-review-weekly` job (Mon 07:45) submits the top writes for approval through the normal gates; when tracking looks broken only the tracking check is proposed. Approval cards explain why.
+- **Client report**: findings, next steps, spend by campaign, target status and a narrative. Template wording always builds; with a model configured, `writeNarrative` rewrites it and rejects any text containing a number not in the data. New printable, white-labelled page at `/api/console/reports/<id>/html` (`REPORT_BRAND_NAME`, `REPORT_LOGO_URL`, `REPORT_ACCENT`).
+- **Competitor ads** (`skill_competitor_ads`, `competitor-watch-weekly` job): real Meta Ad Library ads via Apify (`COMPETITOR_API_KEY`); longest-running ads, formats, CTAs and offers computed in code; weekly snapshots report new ads; model-named angles must cite real ad IDs. No key = an error, never sample data.
+- **Onboarding**: `doctor` checks ads targets, pixel last-fired (live), the Apify key, LLM fallback and budget; a missing LLM is now a warning. New `cli.js job <name>` runs any scheduled job now.
+
 ## 2026-11-15: audit fixes
 - Closed numeric activation and scheduled-budget ceiling bypasses, including Google's alternate money field names. Multiplier budget schedules require an effective amount check and are currently refused.
 - Made native dashboard startup local by default; restricted first-admin onboarding; rejected prototype-pollution keys in settings; stopped trusting client-supplied forwarding headers for login throttling.

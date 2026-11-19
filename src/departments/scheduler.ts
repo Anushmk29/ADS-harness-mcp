@@ -9,7 +9,9 @@ import { runDoctor } from '../ops/doctor.js';
 import { backupDataDir } from '../ops/backup.js';
 import { TrackingStore } from '../core/tracking/store.js';
 import { snapshotKpis } from '../core/tracking/kpi-snapshot.js';
-import { buildReport } from '../core/tracking/reports.js';
+import { buildReport, reportPeriod } from '../core/tracking/reports.js';
+import { writeNarrative } from '../core/tracking/report-writer.js';
+import { llmProviders } from '../core/llm/index.js';
 
 const DAY = 86_400_000;
 const KEEP_LOCAL_BACKUPS = 7;
@@ -20,6 +22,22 @@ export function nextLocal(hour: number, minute = 0, now = Date.now(), weekday?: 
   d.setHours(hour, minute, 0, 0);
   while (d.getTime() <= now || (weekday !== undefined && d.getDay() !== weekday)) d.setDate(d.getDate() + 1);
   return d.getTime();
+}
+
+/**
+ * The ads review(s) to put in a report: those whose 7-day window ends on the report's last day, else the newest.
+ * Several accounts are merged into one view.
+ */
+export function latestReview(records: any[], until: string): any | undefined {
+  if (!records.length) return undefined;
+  const matching = records.filter(r => r.period?.until === until);
+  const chosen = matching.length ? matching : [records[0]];
+  if (chosen.length === 1) return chosen[0];
+  const order = ['critical', 'high', 'medium', 'low', 'info'];
+  return { ...chosen[0], accountId: chosen.map(r => r.accountId).join(','), dataStatus: chosen.every(r => r.dataStatus === 'OK') ? 'OK' : 'INSUFFICIENT',
+    findings: chosen.flatMap(r => r.findings).sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity)),
+    actions: chosen.flatMap(r => r.actions).sort((a, b) => b.score - a.score).map((a, i) => ({ ...a, rank: i + 1 })),
+    campaigns: chosen.flatMap(r => r.campaigns ?? []).sort((a, b) => b.spend - a.spend) };
 }
 
 export function defaultSystemHandlers(root: string): SystemHandlers {
@@ -34,7 +52,7 @@ export function defaultSystemHandlers(root: string): SystemHandlers {
           if (r.status !== 'COMPLETED') throw new Error(r.error ?? r.status);
           return r.data;
         };
-        const result = await snapshotKpis(tracking, read, ads.configuredAccounts(), typeof input.date === 'string' ? input.date : undefined);
+        const result = await snapshotKpis(tracking, read, ads.configuredAccounts(), typeof input.date === 'string' ? input.date : undefined, ads.goalSettings().goal);
         if (result.errors.length) await alert(result.allFailed ? 'critical' : 'warn', 'kpi-snapshot', result.errors.join(' | '));
         return { status: result.allFailed ? 'FAILED' : 'COMPLETED', error: result.allFailed ? result.errors.join(' | ') : undefined, ...result };
       } finally { ads.close(); tracking.close(); }
@@ -42,10 +60,22 @@ export function defaultSystemHandlers(root: string): SystemHandlers {
     async report(input) {
       const kind = input.kind === 'monthly' ? 'monthly' : 'weekly';
       // Monthly runs on a daily slot and only acts on the 1st (months have no fixed interval).
-      if (kind === 'monthly' && new Date().getDate() !== 1) return { status: 'COMPLETED', skipped: 'not the 1st' };
+      if (kind === 'monthly' && !input.force && new Date().getDate() !== 1) return { status: 'COMPLETED', skipped: 'not the 1st' };
+      const { AdsService } = await import('../modules/ads/service.js');
+      const ads = new AdsService({ storageDir: root });
       const tracking = new TrackingStore(join(root, 'tracking'));
-      try { const { id, report } = buildReport(tracking, kind); return { status: 'COMPLETED', reportId: id, headline: report.headline }; }
-      finally { tracking.close(); }
+      try {
+        const now = Date.now();
+        const review = latestReview(await ads.call('ads_list_records', { kind: 'findings' }).then(r => r.data ?? []).catch(() => []), reportPeriod(kind, now).until);
+        const pendingApprovals = await ads.call('ads_list_operations', { statuses: ['PENDING_APPROVAL'] }).then(r => (r.data ?? []).length).catch(() => undefined);
+        const { id, report } = buildReport(tracking, kind, now, { ...ads.goalSettings(), review, pendingApprovals });
+        // Model wording is optional and checked against the numbers; the template narrative is already saved.
+        if (llmProviders().length) {
+          report.narrative = await writeNarrative(report, { businessName: process.env.REPORT_BRAND_NAME || process.env.APP_NAME });
+          tracking.saveReport(report.period, kind, report, now);
+        }
+        return { status: 'COMPLETED', reportId: id, headline: report.headline, narrative: report.narrative.source, findings: report.findings.length };
+      } finally { ads.close(); tracking.close(); }
     },
     async 'ads-fatigue'() {
       const { AdsService } = await import('../modules/ads/service.js');
@@ -59,11 +89,50 @@ export function defaultSystemHandlers(root: string): SystemHandlers {
         };
         const accounts = ads.configuredAccounts().meta ?? [];
         const results = [];
-        for (const accountId of accounts) results.push(await checkFatigue(call, call, accountId));
+        for (const accountId of accounts) results.push(await checkFatigue(call, call, accountId, { goal: ads.goalSettings().goal }));
         const fatigued = results.flatMap(r => r.fatigued);
         if (fatigued.length) await alert('info', 'ads-fatigue', `${fatigued.length} ad(s) show creative fatigue; pause proposals are waiting for client approval`);
         return { status: 'COMPLETED', accounts: accounts.length, fatigued: fatigued.map(f => ({ adId: f.adId, adName: f.adName, proposal: f.proposal })) };
       } finally { ads.close(); }
+    },
+    async 'ads-review'() {
+      const { AdsService } = await import('../modules/ads/service.js');
+      const { proposeActions } = await import('../modules/ads/actions.js');
+      const ads = new AdsService({ storageDir: root });
+      try {
+        const propose = (tool: string, args: Record<string, unknown>) => ads.call(tool, args);
+        const reviews = [], errors: string[] = [], accounts = ads.configuredAccounts().meta ?? [];
+        for (const accountId of accounts) {
+          try {
+            const review = await ads.review(accountId);
+            const proposals = await proposeActions(review.actions, propose, review.period.until);
+            reviews.push({ accountId, dataStatus: review.dataStatus, findings: review.findings.length, critical: review.findings.filter(f => f.severity === 'critical').length, proposals });
+          } catch (e: any) { errors.push(`${accountId}: ${e.message}`); }
+        }
+        if (errors.length) await alert(errors.length === accounts.length ? 'critical' : 'warn', 'ads-review-failed', errors.join(' | '));
+        if (accounts.length && errors.length === accounts.length) return { status: 'FAILED', error: errors.join(' | '), errors };
+        const critical = reviews.reduce((n, r) => n + r.critical, 0), pending = reviews.flatMap(r => r.proposals).filter(p => p.status === 'PENDING_APPROVAL').length;
+        if (critical || pending) await alert(critical ? 'warn' : 'info', 'ads-review', `Weekly ads review: ${critical} critical finding(s), ${pending} change(s) waiting for approval`);
+        return { status: 'COMPLETED', reviews, errors };
+      } finally { ads.close(); }
+    },
+    async 'competitor-watch'() {
+      const { AdsService } = await import('../modules/ads/service.js');
+      const { researchCompetitor } = await import('../modules/research/competitors.js');
+      const ads = new AdsService({ storageDir: root });
+      const competitors = ads.competitors(); ads.close();
+      if (!competitors.length || !process.env.COMPETITOR_API_KEY) return { status: 'COMPLETED', skipped: !competitors.length ? 'no competitors in ads-module.yaml' : 'COMPETITOR_API_KEY not set' };
+      const results = [], errors: string[] = [];
+      for (const c of competitors) {
+        try {
+          const r = await researchCompetitor(c, { root: join(root, 'research'), angles: false });
+          results.push({ name: c.name, ads: r.patterns.total, active: r.patterns.active, newAds: r.newSinceLastSnapshot?.count ?? null });
+        } catch (e: any) { errors.push(`${c.name}: ${e.message}`); }
+      }
+      if (errors.length) await alert(errors.length === competitors.length ? 'critical' : 'warn', 'competitor-watch', errors.join(' | '));
+      const fresh = results.filter(r => r.newAds);
+      if (fresh.length) await alert('info', 'competitor-watch', fresh.map(r => `${r.name}: ${r.newAds} new ad(s)`).join(', '));
+      return { status: errors.length === competitors.length ? 'FAILED' : 'COMPLETED', results, errors };
     },
     async doctor() {
       const checks = await runDoctor({ live: true });
@@ -88,6 +157,9 @@ export function defaultJobs(now = Date.now()): DepartmentJob[] {
     { id: 'report-weekly', department: 'system', capability: 'report', input: { kind: 'weekly' }, nextRunAt: nextLocal(8, 0, now, 1), intervalMs: 7 * DAY },
     { id: 'report-monthly', department: 'system', capability: 'report', input: { kind: 'monthly' }, nextRunAt: nextLocal(8, 5, now), intervalMs: DAY },
     { id: 'ads-fatigue-weekly', department: 'system', capability: 'ads-fatigue', nextRunAt: nextLocal(9, 0, now, 1), intervalMs: 7 * DAY },
+    // Runs before the weekly report (Monday 07:45) so the report carries this week's findings.
+    { id: 'competitor-watch-weekly', department: 'system', capability: 'competitor-watch', nextRunAt: nextLocal(6, 30, now, 1), intervalMs: 7 * DAY },
+    { id: 'ads-review-weekly', department: 'system', capability: 'ads-review', nextRunAt: nextLocal(7, 45, now, 1), intervalMs: 7 * DAY },
     { id: 'doctor-daily', department: 'system', capability: 'doctor', nextRunAt: nextLocal(6, 0, now), intervalMs: DAY },
     { id: 'backup-nightly', department: 'system', capability: 'backup', nextRunAt: nextLocal(2, 30, now), intervalMs: DAY }
   ];

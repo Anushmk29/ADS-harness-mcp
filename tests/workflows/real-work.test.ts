@@ -14,19 +14,6 @@ const tmp = () => mkdtempSync(join(tmpdir(), 'real-work-'));
 beforeEach(() => { vi.stubEnv('DEEPSEEK_API_KEY', 'k'); vi.stubEnv('DEEPSEEK_MODEL', 'm'); MemoryManager.resetInstance(); });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); resetLlmHealth(); MemoryManager.resetInstance(); });
 
-describe('live mode never serves template skills', () => {
-  it('hides and refuses template-only skills in live mode, keeps them in simulation', async () => {
-    const live = createDepartment('research', { mode: 'live', storageDir: tmp() });
-    const names = live.listCapabilities().map(c => c.name);
-    expect(names).toContain('skill_knowledge');
-    expect(names).not.toContain('skill_market_research');
-    await expect(live.run({ capability: 'skill_market_research', input: {} })).rejects.toThrow(/disabled in live mode/);
-    const sim = createDepartment('research', { mode: 'simulation', storageDir: tmp() });
-    expect(sim.listCapabilities().map(c => c.name)).toContain('skill_market_research');
-    await Promise.all([live.close(), sim.close()]);
-  });
-});
-
 describe('reports and fatigue', () => {
   it('builds a weekly report from kpi_daily with week-over-week change and ticks the milestone', () => {
     const store = new TrackingStore(tmp());
@@ -40,6 +27,21 @@ describe('reports and fatigue', () => {
     expect(report.totals.cpl).toBe(20);
     expect(store.milestones().find(m => m.id === 'first-weekly-report')?.status).toBe('done');
     expect(store.reports()).toHaveLength(1);
+    store.close();
+  });
+
+  it('reports purchases, cost per purchase and ROAS for a purchase-goal client', () => {
+    const store = new TrackingStore(tmp());
+    const now = new Date(2026, 9, 12, 9).getTime();
+    for (const day of ['2026-10-06', '2026-10-07']) {
+      store.upsertKpi(day, 'all', 'spend', 100); store.upsertKpi(day, 'all', 'purchases', 2); store.upsertKpi(day, 'all', 'revenue', 300); store.upsertKpi(day, 'all', 'roas', 3);
+    }
+    const { report } = buildReport(store, 'weekly', now, { goal: 'purchase', targets: { roas: 2.5 } });
+    expect(report.headline).toContain('4 purchases');
+    expect(report.headline).toContain('cost per purchase 50');
+    expect(report.headline).toContain('ROAS 3');
+    expect(report.totals).toMatchObject({ cpa: 50, roas: 3 });
+    expect(report.channels.all.roas).toBeUndefined(); // daily ratios are never summed
     store.close();
   });
 

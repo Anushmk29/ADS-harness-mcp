@@ -95,6 +95,19 @@ async function main() {
       break;
     }
 
+    case 'job': {
+      // Run one scheduled system job now, e.g. `job ads-review`, `job report weekly`, `job competitor-watch`, `job kpi-snapshot`.
+      const { defaultSystemHandlers } = await import('../dist/departments/scheduler.js');
+      const { dataDir } = await import('../dist/config/paths.js');
+      const handlers = defaultSystemHandlers(dataDir());
+      const handler = handlers[args[1]];
+      if (!handler) { console.log(`Usage: job <${Object.keys(handlers).join('|')}> [weekly|monthly]`); process.exitCode = 1; break; }
+      const result = await handler(args[1] === 'report' ? { kind: args[2] === 'monthly' ? 'monthly' : 'weekly', force: true } : {});
+      console.log(JSON.stringify(result, null, 2));
+      if (result.status === 'FAILED') process.exitCode = 1;
+      break;
+    }
+
     case 'backup': {
       // Snapshot DATA_DIR into a folder (default <DATA_DIR>/backups/<timestamp>); deploy/backup.sh tars and rotates it.
       const { dataDir } = await import('../dist/config/paths.js');
@@ -212,7 +225,7 @@ async function main() {
     }
 
     default:
-      console.log(`Unknown command: "${command}". Available commands: status, doctor [--offline], backup [dest], create-user <name>, reset-password <name>, ops [--json], google-auth [--client file.json] [--ads], google-test, ads-status, run-mission, run-daily, run-weekly, run-monthly, generate-report, dashboard`);
+      console.log(`Unknown command: "${command}". Available commands: status, doctor [--offline], job <name>, backup [dest], create-user <name>, reset-password <name>, ops [--json], google-auth [--client file.json] [--ads], google-test, ads-status, run-mission, run-daily, run-weekly, run-monthly, generate-report, dashboard`);
   }
 }
 

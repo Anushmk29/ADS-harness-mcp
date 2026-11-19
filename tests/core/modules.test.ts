@@ -15,8 +15,8 @@ describe('marketing module seams', () => {
       expect(() => modules.get('content' as any)).toThrow('Unknown module');
       const ads = modules.get('ads');
       expect(ads.listCapabilities().some(c => c.name.startsWith('ga4_'))).toBe(true);
-      expect(ads.listCapabilities().some(c => c.name === 'skill_market_research')).toBe(false);
-      await expect(ads.run({ capability: 'skill_market_research' })).rejects.toThrow('does not belong to ads');
+      expect(ads.listCapabilities().some(c => c.name.startsWith('research_'))).toBe(false);
+      await expect(ads.run({ capability: 'research_competitor_ads' })).rejects.toThrow('does not belong to ads');
     } finally {
       await modules.close();
       rmSync(dir, { recursive: true, force: true });

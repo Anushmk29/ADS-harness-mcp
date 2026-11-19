@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { TrackingStore } from '../../src/core/tracking/store.js';
-import { snapshotKpis, metaLeads } from '../../src/core/tracking/kpi-snapshot.js';
+import { snapshotKpis, metaLeads, metaPurchases, metaPurchaseValue } from '../../src/core/tracking/kpi-snapshot.js';
 import { chat, setLlmSpendSource, LlmBudgetError, resetLlmHealth } from '../../src/core/llm/index.js';
 import { VisualizationServer } from '../../src/server/server.js';
 import { VisualizationEventBus } from '../../src/visualization/event-bus.js';
@@ -60,6 +60,22 @@ describe('kpi snapshot', () => {
 
   it('falls back to lead sub-types when the aggregate is absent', () => {
     expect(metaLeads([{ action_type: 'onsite_conversion.lead_grouped', value: '2' }, { action_type: 'offsite_conversion.fb_pixel_lead', value: '3' }])).toBe(5);
+  });
+
+  it('tracks purchases and revenue, and counts Google conversions toward the purchase goal', async () => {
+    const store = new TrackingStore(tmp());
+    const read = vi.fn(async (tool: string) => {
+      if (tool === 'meta_ads_list_accounts') return { data: [{ id: 'act_1', currency: 'INR' }] };
+      if (tool === 'meta_ads_insights') return { data: [{ spend: '100', actions: [{ action_type: 'purchase', value: '3' }, { action_type: 'offsite_conversion.fb_pixel_purchase', value: '3' }], action_values: [{ action_type: 'purchase', value: '450' }] }] };
+      return { results: [{ customer: { currencyCode: 'INR' }, metrics: { costMicros: '50000000', conversions: 1, conversionsValue: 150 } }] };
+    });
+    await snapshotKpis(store, read, { meta: ['1'], google: ['2'] }, '2026-10-10', 'purchase');
+    const rows = Object.fromEntries(store.kpis('2026-10-10', '2026-10-10').map(k => [`${k.channel}.${k.metric}`, k.value]));
+    expect(rows).toMatchObject({ 'meta.purchases': 3, 'meta.revenue': 450, 'google.purchases': 1, 'all.purchases': 4, 'all.revenue': 600, 'all.spend': 150 });
+    expect(rows['google.leads']).toBeUndefined();
+    expect(metaPurchases([{ action_type: 'onsite_web_purchase', value: '2' }])).toBe(2);
+    expect(metaPurchaseValue(undefined)).toBe(0);
+    store.close();
   });
 
   it('rejects mixed currencies before writing any daily totals, including across restarts', async () => {

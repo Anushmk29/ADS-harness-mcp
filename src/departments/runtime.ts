@@ -30,7 +30,7 @@ export function createDepartment(id: DepartmentId, options: DepartmentOptions = 
   return {
     id,
     listCapabilities() {
-      return Object.entries(skillCatalog).filter(([, entry]) => (id === 'hq' || entry.department === id || entry.shared) && !(entry.live === false && (options.mode ?? 'live') === 'live'))
+      return Object.entries(skillCatalog).filter(([, entry]) => (id === 'hq' || entry.department === id || entry.shared))
         .map(([name, entry]) => ({ name, department: entry.department, kind: 'skill' as const }));
     },
     async listTools() {
@@ -42,7 +42,6 @@ export function createDepartment(id: DepartmentId, options: DepartmentOptions = 
       const task = taskSchema.parse(rawTask);
       const owner = skillCatalog[task.capability]?.department ?? toolDepartment(task.capability);
       if (!owner) throw new Error(`Unknown capability: ${task.capability}`);
-      if (skillCatalog[task.capability]?.live === false && (options.mode ?? 'live') === 'live') throw new Error(`${task.capability} is a template skill with no live implementation; it is disabled in live mode`);
       if (owner !== id && !skillCatalog[task.capability]?.shared) {
         if (id !== 'hq') throw new Error(`${task.capability} belongs to ${owner}, not ${id}`);
         let child = children.get(owner);

@@ -25,14 +25,25 @@ export interface AdsOptions extends ProviderOptions {
   enableGA4Alpha?: boolean;
   /** Expose Meta's Ads MCP tools as meta_mcp_*; defaults to ADS_META_MCP=on. */
   enableMetaMcp?: boolean;
+  /** What the client buys ads for: leads (CPL) or purchases (CPA + ROAS). Drives KPIs, rules and reports. */
+  goal?: AdsGoal;
+  targets?: AdsTargets;
+  competitors?: Array<{ name: string; query?: string; pageId?: string; country?: string }>;
 }
+export type AdsGoal = 'lead' | 'purchase';
+/** cpa: target cost per result in account currency; roas: target revenue / spend (purchase goal only). */
+export interface AdsTargets { cpa?: number; roas?: number }
 export type AdsExecutionMode = 'off' | 'dry-run' | 'live-with-approval';
 const policySchema = z.object({
   mode: z.enum(['off','dry-run','live-with-approval','review','autonomous']).default('dry-run'),
   accounts: z.object({ meta: z.array(z.coerce.string()).optional(), google: z.array(z.coerce.string()).optional(), ga4: z.array(z.coerce.string()).optional() }).default({}),
   verifiedAccounts: z.object({ meta: z.array(z.coerce.string()).optional(), google: z.array(z.coerce.string()).optional(), ga4: z.array(z.coerce.string()).optional() }).default({}),
   allowedObjects: z.array(z.string()).default([]),
-  maxBudgetPerWrite: z.object({ meta: z.number().positive().optional(), google: z.number().positive().optional() }).default({})
+  maxBudgetPerWrite: z.object({ meta: z.number().positive().optional(), google: z.number().positive().optional() }).default({}),
+  goal: z.enum(['lead', 'purchase']).default('lead'),
+  targets: z.object({ cpa: z.number().positive().optional(), roas: z.number().positive().optional() }).strict().default({}),
+  /** Watched weekly by the competitor-watch job (Meta Ad Library via Apify). */
+  competitors: z.array(z.object({ name: z.string().min(1), query: z.string().optional(), pageId: z.coerce.string().regex(/^\d+$/).optional(), country: z.string().optional() }).strict()).default([])
 }).strict();
 export class AdsService {
   private transport: AdsTransport;
@@ -52,6 +63,9 @@ export class AdsService {
   }
   /** Allowlisted accounts from config/ads-module.yaml (what the daily KPI snapshot reads). */
   configuredAccounts(): Partial<Record<Platform, string[]>> { return { ...(this.options.accounts ?? {}) }; }
+  competitors(): Array<{ name: string; query?: string; pageId?: string; country?: string }> { return [...(this.options.competitors ?? [])]; }
+  /** The client's goal and targets from config/ads-module.yaml (lead with no targets when unset). */
+  goalSettings(): { goal: AdsGoal; targets: AdsTargets } { return { goal: this.options.goal ?? 'lead', targets: { ...(this.options.targets ?? {}) } }; }
   private metaMcpEnabled(): boolean { return this.options.enableMetaMcp ?? process.env.ADS_META_MCP === 'on'; }
   private store() {
     if (this.closed) throw new Error('Ads service is closed');
@@ -333,6 +347,11 @@ export class AdsService {
       this.records().save('report', payloadHash(tool.name, args), { tool: tool.name, accountId: args.accountId, data });
       return { status: 'COMPLETED', source: 'live', fetchedAt, data };
     }
+    if (tool.action === 'findings') {
+      this.scope(tool, args);
+      const { input: _raw, ...data } = await this.review(args.accountId, args.days);
+      return { status: 'COMPLETED', data };
+    }
     if (tool.action === 'compare' || tool.action === 'analyze') {
       if (args.since && args.since > args.until) throw new Error('since must be on or before until');
       return { status: 'COMPLETED', data: tool.action === 'compare' ? comparePerformance(args) : analyzeCreative(args) };
@@ -361,6 +380,25 @@ export class AdsService {
     let record = this.store().create({ id: operationId, tool: name, args, hash, binding: this.binding(tool, args, hash), status: 'DRAFT', transitions: [{ status: 'DRAFT', at: new Date().toISOString() }] });
     record = this.store().submit(record.id);
     return this.execute(record);
+  }
+  /** Findings + ranked actions for one Meta account (saved as a 'findings' record). Proposes nothing. */
+  async review(accountId: string, days = 7, now = Date.now()) {
+    const { collectFindingsData, runRules } = await import('./findings.js');
+    const { rankActions } = await import('./actions.js');
+    const read = async (name: string, readArgs: Record<string, unknown>) => {
+      const r = await this.call(name, readArgs);
+      if (r.status !== 'COMPLETED') throw new Error(r.error ?? r.status);
+      return r.data;
+    };
+    const settings = this.goalSettings();
+    const input = await collectFindingsData(read, accountId, settings.goal, now, days);
+    const { findings, targetCpa, account, dataStatus } = runRules(input, settings);
+    const data = { accountId, period: { since: input.since, until: input.until, days }, goal: settings.goal, targets: settings.targets, targetCpaUsed: targetCpa,
+      targetSource: settings.targets.cpa ? 'configured' : 'account baseline', dataStatus, account, findings, actions: rankActions(findings, input),
+      campaigns: input.current.filter(r => r.level === 'campaign').sort((a, b) => b.spend - a.spend).map(r => ({ id: r.id, name: r.name, spend: r.spend, results: r.results, revenue: r.revenue, costPerResult: r.results ? Math.round(r.spend / r.results * 100) / 100 : null })),
+      generatedAt: new Date(now).toISOString() };
+    this.records().save('findings', `${accountId}-${input.until}`, data);
+    return { ...data, input };
   }
   decide(id: string, approved: boolean): Operation {
     const record = this.store().get(id);

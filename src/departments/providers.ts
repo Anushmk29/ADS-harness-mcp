@@ -23,7 +23,6 @@ export function createProviderLoader(mode: 'simulation' | 'live' = 'live') {
           case 'google_ads': return (await import('../modules/ads/providers/google-ads-mcp.js')).registerGoogleAdsMCP(client);
           case 'meta_ads': return (await import('../modules/ads/providers/meta-ads-mcp.js')).registerMetaAdsMCP(client);
           case 'ga4': return (await import('../modules/ads/providers/ga4-mcp.js')).registerGA4MCP(client);
-          case 'research': return (await import('../mcp/integrations/web-research-mcp.js')).registerWebResearchMCP(client);
           default: throw new Error(`Unknown tool provider: ${name}`);
         }
       })();

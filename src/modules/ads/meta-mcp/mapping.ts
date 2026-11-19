@@ -44,7 +44,7 @@ export const metaMcpMapping: Record<string, MetaMcpRule> = {
   ads_get_ad_images: R(),
   ads_get_ad_videos: R(),
   ads_get_ad_preview: R(),
-  ads_library_search: R('research_competitor_ad_library'),
+  ads_library_search: R('research_competitor_ads'),
   ads_get_ig_accounts: R('meta_ads_list_instagram_accounts'),
   ads_get_ig_media: R(),
   ads_boost_ig_post: W(),

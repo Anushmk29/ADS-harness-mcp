@@ -10,6 +10,8 @@ layout under `dist/`; public package exports are defined in `package.json`.
 |---|---|---|
 | `modules/ads/` | Guarded ad operations, approvals, planning, measurement and provider tools | [service.ts](modules/ads/service.ts), [tools.ts](modules/ads/tools.ts) |
 | `modules/ads/providers/` | Direct Google Ads, Meta and GA4 integrations | [direct-adapter.ts](modules/ads/providers/direct-adapter.ts) |
+| `modules/ads/` (review) | Rules-based findings and the ranked next-step engine; no LLM | [findings.ts](modules/ads/findings.ts), [actions.ts](modules/ads/actions.ts) |
+| `modules/research/` | Real competitor ads from the Meta Ad Library (Apify) and code-computed patterns | [competitors.ts](modules/research/competitors.ts) |
 | `modules/ads/meta-mcp/` | Optional upstream Meta MCP integration | [mapping.ts](modules/ads/meta-mcp/mapping.ts) |
 | `modules/creative/` | OpenRouter image generation and exact-size text composition | [openrouter.ts](modules/creative/openrouter.ts), [compose.ts](modules/creative/compose.ts) |
 | `modules/decode/` | Competitor and own-ad research, classification and transcription | [index.ts](modules/decode/index.ts) |

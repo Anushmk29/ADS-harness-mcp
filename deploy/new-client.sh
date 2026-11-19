@@ -44,8 +44,11 @@ if wait_healthy "$port" 90; then echo "healthy on 127.0.0.1:$port → https://$d
 cat <<EOF
 
 Next steps for $slug:
-  1. Edit $dir/config/business.yaml (the client's business) and ads-module.yaml.
-  2. Fill provider keys in $dir/.env (LLM, Meta/Google, Apify, ALERT_TELEGRAM_BOT_TOKEN + ALERT_TELEGRAM_CHAT_ID).
+  1. Edit $dir/config/business.yaml (the client's business) and ads-module.yaml:
+     accounts, goal (lead | purchase), targets ({ cpa, roas }) and competitors (Facebook Page IDs).
+  2. Fill provider keys in $dir/.env: Meta/Google, DeepSeek + OpenRouter (both, for fallback) with LLM_MONTHLY_BUDGET_USD,
+     COMPETITOR_API_KEY (Apify), REPORT_BRAND_NAME/REPORT_LOGO_URL, ALERT_TELEGRAM_BOT_TOKEN + ALERT_TELEGRAM_CHAT_ID.
   3. cd $dir && docker compose up -d && docker compose exec harness node bin/cli.js doctor
+     Fix every [FAIL]; [warn] on ads targets / pixel / llm fallback means findings or wording run degraded.
   4. Client login: docker compose exec harness node bin/cli.js create-user <name>   (prints a one-time password)
 EOF

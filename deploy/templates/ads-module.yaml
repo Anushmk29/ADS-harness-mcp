@@ -11,3 +11,10 @@ verifiedAccounts:
   ga4: []
 allowedObjects: []
 maxBudgetPerWrite: {}
+# What the ads are bought for: lead (cost per lead) or purchase (cost per purchase + ROAS).
+# Targets are in account currency and drive the findings rules and the report.
+goal: lead
+targets: {}   # e.g. { cpa: 400 } or { cpa: 400, roas: 3 }
+# Competitors watched weekly in the Meta Ad Library (needs COMPETITOR_API_KEY, an Apify token).
+# pageId (the Facebook Page ID) is exact; otherwise name/query is a keyword search.
+competitors: []   # e.g. [{ name: Acme, pageId: '1234567890', country: IN }]

@@ -70,4 +70,22 @@ describe('client console', () => {
       expect(types).toEqual(expect.arrayContaining(['login', 'ads.approved', 'feedback']));
     });
   });
+  it('serves the client report as a branded, locked-down HTML page to a signed-in client only', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'console-report-'));
+    vi.stubEnv('REPORT_BRAND_NAME', 'Acme Shoes'); vi.stubEnv('HARNESS_KEY', 'operator-key'); // not open local-dev mode
+    await withServer(dir, async (base, login, server) => {
+      server.tracking.saveReport('2026-11-09', 'weekly', { kind: 'weekly', since: '2026-11-09', until: '2026-11-15', goal: 'lead', headline: 'Ad spend 1,400', totals: { current: { spend: 1400 }, previous: {} },
+        findings: [{ severity: 'critical', entity: { name: 'Broad' }, message: 'Spent 700 with no leads.' }], actions: [], work: {}, narrative: { summary: 'A week.', points: [], source: 'template' } });
+      expect((await realFetch(base + '/api/console/reports/weekly-2026-11-09/html')).status).toBe(401);
+      const cookie = await login();
+      const res = await realFetch(base + '/api/console/reports/weekly-2026-11-09/html', { headers: { cookie } });
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+      expect(res.headers.get('content-security-policy')).toContain("default-src 'none'");
+      const html = await res.text();
+      expect(html).toContain('Weekly ads report · Acme Shoes');
+      expect(html).toContain('Spent 700 with no leads.');
+      expect((await realFetch(base + '/api/console/reports/weekly-missing/html', { headers: { cookie } })).status).toBe(404);
+    });
+  });
 });

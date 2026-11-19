@@ -336,6 +336,14 @@ export class VisualizationServer {
       if (parsedUrl.searchParams.get('format') === 'line') { res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end(summaryLine(summary)); return; }
       sendJson(summary); return;
     }
+    const reportPage = /^\/api\/console\/reports\/([^/]+)\/html$/.exec(pathname);
+    if (reportPage && req.method === 'GET') {
+      const report = this.tracking.report(decodeURIComponent(reportPage[1]));
+      if (!report) { sendJson({ error: 'Report not found' }, 404); return; }
+      const { renderReportHtml, brandFromEnv } = await import('../core/tracking/report-html.js');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; img-src https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'" });
+      res.end(renderReportHtml(report, brandFromEnv())); return;
+    }
     if (await handleConsoleRoute({ tracking: this.tracking, ads: this.modules.get('ads'), parseBody: r => this.parseBody(r) }, pathname, req, sendJson)) return;
     if (await this.handleModuleRoute(pathname, req, sendJson)) return;
 

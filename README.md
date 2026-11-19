@@ -32,6 +32,10 @@ node --env-file=.env bin/cli.js dashboard
 
 # Show platform modes and credential readiness
 node --env-file=.env bin/cli.js ads-status
+
+# Run a scheduled job now: ads-review (findings + approvals), report weekly|monthly,
+# competitor-watch, kpi-snapshot, ads-fatigue, doctor, backup
+node --env-file=.env bin/cli.js job ads-review
 ```
 
 Live provider acceptance must be verified for each account. Local tests and simulated

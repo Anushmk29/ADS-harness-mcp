@@ -18,7 +18,7 @@ describe('knowledge', () => {
       const fit = await ads.run({ capability: 'skill_knowledge', input: { path: 'ads/our-business-fit.md' } });
       expect(fit.output.content).toContain('Where the pages disagree');
       await expect(ads.run({ capability: 'skill_knowledge', input: { path: '../package.json' } })).rejects.toThrow('Unknown knowledge file');
-      await expect(ads.run({ capability: 'skill_market_research', input: {} })).rejects.toThrow('belongs to research');
+      await expect(ads.run({ capability: 'skill_ga4_analysis', input: {} })).rejects.toThrow('belongs to analytics');
     } finally { await ads.close(); await analytics.close(); rmSync(dir, { recursive: true, force: true }); }
   });
 

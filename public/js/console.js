@@ -233,24 +233,8 @@
       <text x="${P}" y="16" font-size="12" fill="#10b981">● leads</text><text x="${P + 70}" y="16" font-size="12" fill="#94a3b8">■ spend</text></svg>`;
   }
 
-  async function openReport(id) {
-    const { report: r } = await api(`/api/console/reports/${encodeURIComponent(id)}`);
-    const cur = r.totals.current || {}, prev = r.totals.previous || {};
-    main().innerHTML = `<p class="no-print"><button class="c-btn ghost" id="report-back">← Back</button> <button class="c-btn primary" onclick="window.print()">Save as PDF</button></p>
-      <h1 class="c-h1">${esc(r.kind === 'weekly' ? 'Weekly' : 'Monthly')} report</h1><p class="c-sub">${esc(r.since)} to ${esc(r.until)}</p>
-      <div class="c-card"><strong>${esc(r.headline)}</strong></div>
-      <div class="c-grid" style="margin-top:14px">
-        <div class="c-card c-kpi"><div class="label">Spend</div><div class="value">${fmt(cur.spend)}</div><div class="delta flat">before: ${fmt(prev.spend)}</div></div>
-        <div class="c-card c-kpi"><div class="label">Leads</div><div class="value">${fmt(cur.leads)}</div><div class="delta flat">before: ${fmt(prev.leads)}</div></div>
-        <div class="c-card c-kpi"><div class="label">Cost per lead</div><div class="value">${fmt(r.totals.cpl)}</div><div class="delta flat">before: ${fmt(r.totals.previousCpl)}</div></div>
-        <div class="c-card c-kpi"><div class="label">Website visits</div><div class="value">${fmt(r.totals.sessions)}</div></div>
-      </div>
-      <h2 class="c-h2">Work done</h2>
-      <div class="c-card"><p>${r.work.adChangesApplied} ad change(s) applied · ${r.work.approvalsRequested} approval(s) requested</p>
-        ${r.work.milestonesReached.length ? `<p style="margin-top:8px">${r.work.milestonesReached.map(esc).join('<br>')}</p>` : ''}</div>
-      <p class="c-sub" style="margin-top:14px">${esc(r.dataNote)}</p>`;
-    $('#report-back').addEventListener('click', () => go('results'));
-  }
+  // The report is its own printable page (findings, next steps, campaigns); the session cookie authorises it.
+  function openReport(id) { window.open(`/api/console/reports/${encodeURIComponent(id)}/html`, '_blank', 'noopener'); }
 
   window.addEventListener('DOMContentLoaded', boot);
 })();

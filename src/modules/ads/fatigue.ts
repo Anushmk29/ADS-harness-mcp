@@ -1,5 +1,5 @@
 import { analyzeCreative } from './measurement.js';
-import { metaLeads } from '../../core/tracking/kpi-snapshot.js';
+import { metaResults } from '../../core/tracking/kpi-snapshot.js';
 
 type Call = (tool: string, args: Record<string, unknown>) => Promise<any>;
 const day = (offset: number, now: number) => { const d = new Date(now); d.setDate(d.getDate() + offset); return d.toLocaleDateString('en-CA'); };
@@ -9,7 +9,7 @@ const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? n
  * Weekly creative-fatigue check: last 7 days vs the 7 before, per ad, through analyzeCreative's 20% CTR/CPA rule.
  * A fatigued ad becomes a PAUSE proposal in the ads journal (PENDING_APPROVAL in live-with-approval mode); nothing auto-pauses.
  */
-export async function checkFatigue(read: Call, propose: Call, accountId: string, options: { now?: number; minimumImpressions?: number; minimumConversions?: number } = {}) {
+export async function checkFatigue(read: Call, propose: Call, accountId: string, options: { now?: number; minimumImpressions?: number; minimumConversions?: number; goal?: 'lead' | 'purchase' } = {}) {
   const now = options.now ?? Date.now();
   const fields = ['ad_id', 'ad_name', 'spend', 'impressions', 'clicks', 'actions'];
   const window = async (since: number, until: number) => {
@@ -21,7 +21,7 @@ export async function checkFatigue(read: Call, propose: Call, accountId: string,
   for (const [adId, cur] of current) {
     const base = baseline.get(adId);
     if (!base) continue;
-    const stats = (r: any) => ({ impressions: num(r.impressions), clicks: num(r.clicks), spend: num(r.spend), conversions: metaLeads(r.actions) });
+    const stats = (r: any) => ({ impressions: num(r.impressions), clicks: num(r.clicks), spend: num(r.spend), conversions: metaResults(r.actions, options.goal) });
     const verdict = analyzeCreative({ adId, baseline: stats(base), current: stats(cur), conversionLagElapsed: true,
       minimumImpressions: options.minimumImpressions ?? 1000, minimumConversions: options.minimumConversions ?? 5 });
     let proposal: any;
