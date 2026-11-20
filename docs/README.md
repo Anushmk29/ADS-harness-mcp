@@ -9,6 +9,7 @@ Campaign documents contain business-specific assumptions and budgets.
 ## Guides
 
 - [Department quickstart](guides/departments-quickstart.md): tools, credentials, MCP, approvals and verification.
+- [Meta connection and approvals](guides/meta-connection.md): app use cases, token permissions, troubleshooting and simpler login options.
 - [Direct ads integration](ads/ads-direct-integration.md): Google Ads, Meta and GA4 adapters.
 - [DeepSeek ads workflow](ads/deepseek-ads-command.md) and [operating notes](ads/deepseek-operating-notes.md).
 - [Decode](guides/decode.md): research and transcription guide; includes historical organic-mode behavior removed in October.

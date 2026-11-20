@@ -120,6 +120,11 @@ export class OperationJournal {
     return updated.changes ? record : undefined;
   }
 
+  renew(id: string, owner: string): void {
+    this.db.prepare("UPDATE operations SET record = json_set(record, '$.dispatch.leaseExpiresAt', ?) WHERE id = ? AND json_extract(record, '$.status') = 'DISPATCHED' AND json_extract(record, '$.dispatch.owner') = ?")
+      .run(new Date(Date.now() + 60_000).toISOString(), id, owner);
+  }
+
   failAuthorized(id: string, error: string): Operation {
     const record = this.get(id);
     if (!record) throw new Error('Operation not found');

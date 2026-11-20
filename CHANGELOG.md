@@ -2,6 +2,11 @@
 
 Newest first. Every change to tools, skills or `knowledge/` gets a line here. Refreshes of upstream guidance also update `knowledge/SOURCES.md`.
 
+## 2026-11-20: Agent activity dashboard
+- Every MCP tool call (Claude Code, Codex or any other client, named from the MCP handshake or `MCP_CLIENT_LABEL`) and every harness job run (scheduler and `cli job`) is saved to `tool_calls` in `tracking.sqlite`: input, output, error, duration. Secrets and image bytes are blanked and long text is cut to 8,000 characters.
+- New dashboard view **Agent activity** (`/api/console/agent`): calls, failure rate, errors and timing by source and tool; full input and output per call; mark each output useful or wrong with a note.
+- **Agent report** (`agent-report-weekly` job, Mon 08:15, or "Save a report now"): failures, outputs marked wrong, and rule-based pointers on what to fix. Saved as `agent-<date>` reports; kept out of the client's Results page.
+
 ## 2026-11-20: rules-based reviews, client reports, real competitor data
 Goal: the weekly loop (findings, next steps, client report) runs without Claude; a cheap model is optional and only words the report.
 - **Removed fake research.** Deleted the hard-coded `web-research-mcp` results, `skill_market_research`, `skill_competitor_analysis`, the Laya relevance filter and the template-skill (`live: false`) mechanism that only existed for them.

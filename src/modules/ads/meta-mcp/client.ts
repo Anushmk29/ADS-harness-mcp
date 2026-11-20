@@ -26,20 +26,36 @@ export class MetaMcpClient implements MetaMcpCaller {
   constructor(private token: () => Promise<string>, private url = process.env.ADS_META_MCP_URL || META_MCP_URL) {}
 
   private connect(): Promise<Client> {
-    return this.connection ??= (async () => {
+    if (this.connection) return this.connection;
+    const pending = (async () => {
       const transport = new StreamableHTTPClientTransport(new URL(this.url), { requestInit: { headers: { Authorization: `Bearer ${await this.token()}` } } });
       const client = new Client({ name: 'marketing-harness', version: '1.0.0' });
-      await client.connect(transport);
+      client.onclose = () => { if (this.connection === pending) this.connection = undefined; };
+      try { await client.connect(transport, { timeout: 60_000 }); }
+      catch (error) { await client.close().catch(() => {}); throw error; }
       return client;
-    })().catch(error => { this.connection = undefined; throw error; });
+    })().catch(error => { if (this.connection === pending) this.connection = undefined; throw error; });
+    this.connection = pending;
+    return pending;
+  }
+
+  private async request<T>(run: (client: Client) => Promise<T>): Promise<T> {
+    const pending = this.connect();
+    const client = await pending;
+    try { return await run(client); }
+    catch (error) {
+      // Discard a broken session; the transport decides whether a read can be retried.
+      if (this.connection === pending) this.connection = undefined;
+      await client.close().catch(() => {});
+      throw error;
+    }
   }
 
   async listTools(): Promise<MetaMcpSnapshot['tools']> {
-    const client = await this.connect();
     const tools: MetaMcpSnapshot['tools'] = [];
     let cursor: string | undefined;
     do {
-      const page = await client.listTools(cursor ? { cursor } : undefined, { timeout: 60_000 });
+      const page = await this.request(client => client.listTools(cursor ? { cursor } : undefined, { timeout: 60_000 }));
       tools.push(...page.tools.map(t => ({ name: t.name, description: t.description ?? '', inputSchema: t.inputSchema as Record<string, unknown> })));
       cursor = page.nextCursor;
     } while (cursor);
@@ -47,8 +63,7 @@ export class MetaMcpClient implements MetaMcpCaller {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<any> {
-    const client = await this.connect();
-    const result: any = await client.callTool({ name, arguments: args }, undefined, { timeout: 60_000 });
+    const result: any = await this.request(client => client.callTool({ name, arguments: args }, undefined, { timeout: 60_000 }));
     const text = (result.content ?? []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
     if (result.isError) throw new MetaMcpToolError(`Meta MCP ${name}: ${text || 'tool error'}`);
     if (result.structuredContent !== undefined) return result.structuredContent;

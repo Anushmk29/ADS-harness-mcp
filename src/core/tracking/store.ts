@@ -6,6 +6,18 @@ import { dataDir } from '../../config/paths.js';
 export type Actor = 'system' | 'client' | 'operator';
 export interface Milestone { id: string; title: string; phase: string; owner: 'client' | 'system'; status: 'todo' | 'done'; due: string | null; doneAt: number | null; sort: number }
 export interface Activity { id: number; ts: number; actor: Actor; type: string; summary: string; ref: string | null }
+export interface ToolCall { id: number; ts: number; client: string; tool: string; args: string | null; ok: boolean; durationMs: number; output: string | null; error: string | null; rating: 1 | -1 | null; note: string | null }
+
+const SECRET_KEY = /token|secret|password|api[_-]?key|authorization|cookie|imageBytes/i;
+const CALL_TEXT_LIMIT = 8000;
+/** JSON for the call log: secrets and image bytes blanked, long text cut. */
+export function callText(value: unknown, limit = CALL_TEXT_LIMIT): string | null {
+  if (value === undefined) return null;
+  const text = typeof value === 'string' ? value : JSON.stringify(value, (key, v) => key && SECRET_KEY.test(key) ? '[redacted]' : v) ?? null;
+  return text && text.length > limit ? `${text.slice(0, limit)}… [${text.length - limit} more chars]` : text;
+}
+const toCall = (r: any): ToolCall => ({ id: r.id, ts: r.ts, client: r.client, tool: r.tool, args: r.args, ok: !!r.ok, durationMs: r.duration_ms, output: r.output, error: r.error, rating: r.rating, note: r.note });
+
 export interface CostRow { kind: 'llm' | 'apify' | 'transcribe' | 'image'; provider: string; model?: string; units?: number; usd: number; jobId?: string; purpose?: string; ts?: number }
 
 /** Engagement template seeded once per client; `owner` says who the client is waiting on. */
@@ -47,6 +59,9 @@ export class TrackingStore {
         model TEXT, units REAL, usd REAL NOT NULL, job_id TEXT, purpose TEXT);
       CREATE INDEX IF NOT EXISTS costs_ts ON costs(ts);
       CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, period TEXT NOT NULL, kind TEXT NOT NULL, created_at INTEGER NOT NULL, json TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS tool_calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, client TEXT NOT NULL, tool TEXT NOT NULL,
+        args TEXT, ok INTEGER NOT NULL, duration_ms INTEGER NOT NULL, output TEXT, error TEXT, rating INTEGER, note TEXT);
+      CREATE INDEX IF NOT EXISTS tool_calls_ts ON tool_calls(ts);
     `);
     const insert = this.db.prepare('INSERT OR IGNORE INTO milestones (id, title, phase, owner, sort) VALUES (?, ?, ?, ?, ?)');
     MILESTONE_TEMPLATE.forEach((m, i) => insert.run(m.id, m.title, m.phase, m.owner, i));
@@ -124,8 +139,42 @@ export class TrackingStore {
     return this.db.prepare('SELECT kind, provider, SUM(usd) AS usd, COUNT(*) AS calls FROM costs WHERE ts >= ? GROUP BY kind, provider ORDER BY usd DESC').all(since) as any;
   }
 
+  // --- agent / harness tool calls (MCP clients and scheduled jobs) ---
+  logToolCall(call: { client: string; tool: string; args?: unknown; ok: boolean; durationMs: number; output?: unknown; error?: string; ts?: number }): number {
+    return Number(this.db.prepare('INSERT INTO tool_calls (ts, client, tool, args, ok, duration_ms, output, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(call.ts ?? Date.now(), call.client.slice(0, 80), call.tool.slice(0, 120), callText(call.args), call.ok ? 1 : 0, Math.round(call.durationMs), callText(call.output), call.error?.slice(0, 2000) ?? null).lastInsertRowid);
+  }
+  toolCalls(filter: { limit?: number; since?: number; client?: string; tool?: string; failed?: boolean; rated?: 1 | -1 } = {}): ToolCall[] {
+    const where = ['ts >= ?'], params: any[] = [filter.since ?? 0];
+    if (filter.client) { where.push('client = ?'); params.push(filter.client); }
+    if (filter.tool) { where.push('tool = ?'); params.push(filter.tool); }
+    if (filter.failed !== undefined) { where.push('ok = ?'); params.push(filter.failed ? 0 : 1); }
+    if (filter.rated) { where.push('rating = ?'); params.push(filter.rated); }
+    return (this.db.prepare(`SELECT * FROM tool_calls WHERE ${where.join(' AND ')} ORDER BY ts DESC, id DESC LIMIT ?`).all(...params, Math.min(filter.limit ?? 100, 1000)) as any[]).map(toCall);
+  }
+  toolCall(id: number): ToolCall | null {
+    const row = this.db.prepare('SELECT * FROM tool_calls WHERE id = ?').get(id);
+    return row ? toCall(row) : null;
+  }
+  /** Operator verdict on one output: 1 useful, -1 wrong, null clears. */
+  rateToolCall(id: number, rating: 1 | -1 | null, note?: string): boolean {
+    return Number(this.db.prepare('UPDATE tool_calls SET rating = ?, note = ? WHERE id = ?').run(rating, note?.slice(0, 1000) || null, id).changes) > 0;
+  }
+  toolCallStats(since = 0) {
+    const one = (sql: string) => this.db.prepare(sql).get(since) as any;
+    const all = (sql: string) => this.db.prepare(sql).all(since) as any[];
+    const totals = one('SELECT COUNT(*) AS calls, COALESCE(SUM(ok = 0), 0) AS failed, COALESCE(SUM(rating = 1), 0) AS good, COALESCE(SUM(rating = -1), 0) AS bad FROM tool_calls WHERE ts >= ?');
+    return {
+      ...totals,
+      byClient: all('SELECT client, COUNT(*) AS calls, SUM(ok = 0) AS failed, MAX(ts) AS lastTs FROM tool_calls WHERE ts >= ? GROUP BY client ORDER BY calls DESC'),
+      byTool: all('SELECT tool, COUNT(*) AS calls, SUM(ok = 0) AS failed, ROUND(AVG(duration_ms)) AS avgMs, MAX(duration_ms) AS maxMs, SUM(rating = 1) AS good, SUM(rating = -1) AS bad FROM tool_calls WHERE ts >= ? GROUP BY tool ORDER BY calls DESC'),
+      topErrors: all('SELECT tool, error, COUNT(*) AS count, MAX(ts) AS lastTs FROM tool_calls WHERE ts >= ? AND ok = 0 GROUP BY tool, error ORDER BY count DESC LIMIT 10'),
+      byDay: all("SELECT date(ts / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS calls, SUM(ok = 0) AS failed FROM tool_calls WHERE ts >= ? GROUP BY day ORDER BY day")
+    } as { calls: number; failed: number; good: number; bad: number; byClient: any[]; byTool: any[]; topErrors: any[]; byDay: any[] };
+  }
+
   // --- reports ---
-  saveReport(period: string, kind: 'weekly' | 'monthly', json: unknown, now = Date.now()): string {
+  saveReport(period: string, kind: 'weekly' | 'monthly' | 'agent', json: unknown, now = Date.now()): string {
     const id = `${kind}-${period}`;
     this.db.prepare('INSERT INTO reports (id, period, kind, created_at, json) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET created_at=excluded.created_at, json=excluded.json')
       .run(id, period, kind, now, JSON.stringify(json));

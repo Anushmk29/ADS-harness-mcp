@@ -108,12 +108,14 @@ describe('ads operation lifecycle', () => {
     try {
       await first.call('meta_ads_create_campaign', { accountId: '123', operationId: 'leased-create', data: { name: 'Leased', objective: 'OUTCOME_AWARENESS' } });
       first.decide('leased-create', true);
+      vi.useFakeTimers();
       const dispatch = first.resume('leased-create');
       await vi.waitFor(() => expect(network).toHaveBeenCalledTimes(1));
+      await vi.advanceTimersByTimeAsync(80_000);
       expect((await second.resume('leased-create')).status).toBe('DISPATCHED');
       release();
       expect((await dispatch).status).toBe('DISPATCHED');
-    } finally { first.close(); second.close(); rmSync(dir, { recursive: true, force: true }); }
+    } finally { release(); vi.useRealTimers(); first.close(); second.close(); rmSync(dir, { recursive: true, force: true }); }
   });
 
   it('fails missing credentials before marking an operation dispatched', async () => {
@@ -198,13 +200,14 @@ describe('ads operation lifecycle', () => {
     } finally { service.close(); vi.unstubAllEnvs(); rmSync(dir, { recursive: true, force: true }); }
   });
 
-  it('continues a known partial Meta hierarchy without recreating verified parents', async () => {
+  it.each(['existing', 'fresh'])('continues a known partial Meta hierarchy without recreating parents or %s media', async media => {
     const dir = mkdtempSync(join(tmpdir(), 'ads-meta-partial-'));
-    let nextId = 100, posts = 0;
+    let nextId = 100, posts = 0, imageUploads = 0;
     const objects = new Map<string, any>();
     const network = vi.fn(async (rawUrl: any, init: any) => {
       const url = new URL(String(rawUrl));
       if (init.method === 'GET') return new Response(JSON.stringify(objects.get(url.pathname.split('/').at(-1)!) ?? {}));
+      if (url.pathname.endsWith('/adimages')) { imageUploads++; return new Response('{"images":{"image":{"hash":"uploaded-hash"}}}'); }
       if ([2, 4].includes(++posts)) return new Response('{"error":{"message":"invalid child"}}', { status: 400 });
       const body = new URLSearchParams(init.body); const id = String(++nextId);
       const values = Object.fromEntries([...body.entries()].map(([key, value]) => { try { return [key, JSON.parse(value)]; } catch { return [key, value]; } }));
@@ -212,7 +215,7 @@ describe('ads operation lifecycle', () => {
       return new Response(JSON.stringify({ id }));
     });
     const service = new AdsService({ mode: 'live-with-approval', accounts: { meta: ['123'] }, verifiedAccounts: { meta: ['123'] }, storageDir: dir, tokens: { meta: 'test' }, fetch: network });
-    const spec = { campaign: { name: 'Traffic', objective: 'OUTCOME_TRAFFIC', budgetOwner: 'AD_SET', dailyBudget: 1000, bidStrategy: 'LOWEST_COST_WITHOUT_CAP', specialAdCategories: [] }, adSet: { name: 'Visitors', conversionLocation: 'WEBSITE', performanceGoal: 'LANDING_PAGE_VIEWS', billingEvent: 'IMPRESSIONS', targeting: { countries: ['IN'] }, placements: ['facebook_feed'] }, ad: { name: 'Ad', pageId: '999', creative: { imageHash: 'hash' }, destinationUrl: 'https://example.com', primaryText: 'Visit', callToAction: 'LEARN_MORE' } };
+    const spec = { campaign: { name: 'Traffic', objective: 'OUTCOME_TRAFFIC', budgetOwner: 'AD_SET', dailyBudget: 1000, bidStrategy: 'LOWEST_COST_WITHOUT_CAP', specialAdCategories: [] }, adSet: { name: 'Visitors', conversionLocation: 'WEBSITE', performanceGoal: 'LANDING_PAGE_VIEWS', billingEvent: 'IMPRESSIONS', targeting: { countries: ['IN'] }, placements: ['facebook_feed'] }, ad: { name: 'Ad', pageId: '999', creative: media === 'fresh' ? { imageBytes: 'aW1n' } : { imageHash: 'hash' }, destinationUrl: 'https://example.com', primaryText: 'Visit', callToAction: 'LEARN_MORE' } };
     try {
       await service.call('meta_ads_readiness', { accountId: '123', snapshot: { businessManagerId: '1', pageId: '999', paymentReady: true, businessVerified: true, adsManagement: true, accessTier: 'Limited', tokenHealthy: true, assetAccessHealthy: true, currency: 'INR', timezone: 'Asia/Kolkata' } });
       await service.call('ads_launch_meta', { accountId: '123', launchId: 'partial-launch', spec });
@@ -227,11 +230,12 @@ describe('ads operation lifecycle', () => {
         await expect(competing.call('ads_continue_meta_launch', { accountId: '123', launchId: 'partial-launch', operationId: 'stale-branch' })).rejects.toThrow('partial-continuation');
       } finally { competing.close(); }
       const next = await service.call('ads_continue_meta_launch', { accountId: '123', launchId: 'partial-continuation', operationId: 'finish-continuation' });
-      expect(next.args.existingIds).toEqual({ campaign: '101', adset: '102' });
+      expect(next.args.existingIds).toEqual({ campaign: '101', adset: '102', ...(media === 'fresh' ? { imageHash: 'uploaded-hash' } : {}) });
       service.decide('finish-continuation', true);
       const result = await service.resume('finish-continuation');
       expect(result).toMatchObject({ status: 'VERIFIED', result: { ids: { campaign: '101', adset: '102', creative: '103', ad: '104' } } });
       expect(posts).toBe(6);
+      expect(imageUploads).toBe(media === 'fresh' ? 1 : 0);
     } finally { service.close(); rmSync(dir, { recursive: true, force: true }); }
   });
 });

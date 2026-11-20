@@ -3,6 +3,7 @@ import type http from 'node:http';
 import type { TrackingStore } from '../core/tracking/store.js';
 import type { MarketingModule } from '../core/modules/contracts.js';
 import { localDate } from '../core/tracking/kpi-snapshot.js';
+import { saveAgentReport } from '../core/tracking/agent-report.js';
 
 export interface ConsoleContext {
   tracking: TrackingStore;
@@ -37,7 +38,8 @@ export function describeAdsOperation(op: any): { title: string; description: str
   if (/^meta_ads_update_/.test(op.tool) && args.data?.status === 'PAUSED') return { title: `Pause ${op.tool.replace('meta_ads_update_', '')}${object}?`, description: reason || (op.id.startsWith('fatigue-') ? 'Its results dropped more than 20% versus the week before (fewer clicks, higher cost per result).' : 'Stop delivery of this item.') };
   // ponytail: Meta minor units /100; wrong for zero-decimal currencies (JPY, KRW).
   if (/^meta_ads_update_/.test(op.tool) && args.data?.daily_budget) return { title: `Change daily budget${object} to ${args.data.daily_budget / 100}?`, description: reason || 'New daily budget in account currency.' };
-  if (op.tool === 'ads_launch_meta') return { title: 'Launch a new Meta campaign (created paused)', description: 'Creates the campaign, ad set and ads paused so you can check them before anything spends.' };
+  if (op.tool === 'ads_launch_meta') return { title: 'Launch a new Meta campaign (created paused)', description: 'One approval covers the campaign, ad set, creative image and copy, and ad. Everything starts paused; activation is a separate decision.' };
+  if (op.tool === 'ads_publish_meta_creative') return { title: 'Publish image and copy to Meta', description: 'One approval uploads this image and creates the creative with the copy, Page, destination and CTA shown below. No ad is activated.' };
   return { title: op.tool.replace(/_/g, ' '), description: `Account ${args.accountId ?? 'n/a'}${object}` };
 }
 
@@ -67,6 +69,44 @@ function weekTotals(tracking: TrackingStore) {
   return { thisWeek: tracking.totals(localDate(-7), localDate(-1)), lastWeek: tracking.totals(localDate(-14), localDate(-8)) };
 }
 
+const preview = (text: string | null, n = 240) => text && text.length > n ? `${text.slice(0, n)}…` : text;
+
+/** Agent activity: what MCP clients and harness jobs called, how it went, and the operator's verdict on each output. */
+async function agentRoute(ctx: ConsoleContext, pathname: string, req: http.IncomingMessage, sendJson: (data: any, status?: number) => void): Promise<boolean> {
+  const q = new URL(req.url ?? '', 'http://x').searchParams;
+  if (pathname === '/api/console/agent' && req.method === 'GET') {
+    const days = Math.min(Math.max(Number(q.get('days')) || 7, 1), 365);
+    const since = Date.now() - days * 86_400_000;
+    const rated = q.get('rated') === 'bad' ? -1 : q.get('rated') === 'good' ? 1 : undefined;
+    const calls = ctx.tracking.toolCalls({ since, limit: 200, client: q.get('client') || undefined, tool: q.get('tool') || undefined,
+      failed: q.get('status') === 'failed' ? true : q.get('status') === 'ok' ? false : undefined, rated })
+      .map(c => ({ ...c, args: preview(c.args), output: preview(c.output) }));
+    sendJson({ days, stats: ctx.tracking.toolCallStats(since), calls, reports: ctx.tracking.reports('agent') });
+    return true;
+  }
+  const call = /^\/api\/console\/agent\/calls\/(\d+)(\/rating)?$/.exec(pathname);
+  if (call && !call[2] && req.method === 'GET') {
+    const found = ctx.tracking.toolCall(Number(call[1]));
+    if (found) sendJson({ call: found }); else sendJson({ error: 'Call not found' }, 404);
+    return true;
+  }
+  if (call && call[2] && req.method === 'POST') {
+    const body = await ctx.parseBody(req);
+    if (![1, -1, null].includes(body.rating)) { sendJson({ error: 'rating must be 1, -1 or null' }, 400); return true; }
+    const ok = ctx.tracking.rateToolCall(Number(call[1]), body.rating, typeof body.note === 'string' ? body.note : undefined);
+    if (ok) sendJson({ ok }); else sendJson({ error: 'Call not found' }, 404);
+    return true;
+  }
+  if (pathname === '/api/console/agent/report' && req.method === 'POST') {
+    const { id, report } = saveAgentReport(ctx.tracking);
+    ctx.tracking.log('operator', 'report.agent', report.headline, id);
+    sendJson({ id, report });
+    return true;
+  }
+  sendJson({ error: 'Not found' }, 404);
+  return true;
+}
+
 export async function handleConsoleRoute(ctx: ConsoleContext, pathname: string, req: http.IncomingMessage, sendJson: (data: any, status?: number) => void): Promise<boolean> {
   if (!pathname.startsWith('/api/console/')) return false;
   try {
@@ -90,8 +130,9 @@ export async function handleConsoleRoute(ctx: ConsoleContext, pathname: string, 
       sendJson({ activity: ctx.tracking.activity({ limit: 100 }) }); return true;
     }
     if (pathname === '/api/console/results' && req.method === 'GET') {
-      sendJson({ kpis: ctx.tracking.kpis(localDate(-84), localDate(0)), ...weekTotals(ctx.tracking), reports: ctx.tracking.reports() }); return true;
+      sendJson({ kpis: ctx.tracking.kpis(localDate(-84), localDate(0)), ...weekTotals(ctx.tracking), reports: ctx.tracking.reports().filter(r => r.kind !== 'agent') }); return true;
     }
+    if (pathname.startsWith('/api/console/agent')) return await agentRoute(ctx, pathname, req, sendJson);
     const report = /^\/api\/console\/reports\/([^/]+)$/.exec(pathname);
     if (report && req.method === 'GET') {
       const data = ctx.tracking.report(decodeURIComponent(report[1]));

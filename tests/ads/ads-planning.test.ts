@@ -143,6 +143,8 @@ describe('ads planning contracts', () => {
       expect(metaPlan.data.valid).toBe(true);
       expect(metaPlan.data.payload.campaign).toMatchObject({ status: 'PAUSED', special_ad_categories: [] });
       expect(metaPlan.data.approvalBrief).toMatchObject({ provider: 'meta', accountId: '123', activationRequiresSeparateApproval: true });
+      expect(metaPlan.data.approvalBrief.exactOperations).toEqual(['meta-plan']);
+      expect(metaPlan.data.approvalBrief.creative).toMatchObject({ imageHash: 'hash', primaryText: 'See the offer', headline: 'Learn More', callToAction: 'LEARN_MORE' });
 
       const googlePlan = await service.call('google_ads_prepare_search_launch', { launchId: 'google-plan', accountId: '456', spec: google });
       expect(googlePlan.data).toMatchObject({ valid: false, status: 'BLOCKED' });

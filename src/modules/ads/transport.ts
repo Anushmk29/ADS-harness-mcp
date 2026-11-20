@@ -1,4 +1,5 @@
 import type { AdsTool, Platform } from './tools.js';
+import { isDeepStrictEqual } from 'node:util';
 import { MetaMcpClient, MetaMcpToolError, type MetaMcpCaller } from './meta-mcp/client.js';
 
 export interface ProviderOptions {
@@ -126,6 +127,7 @@ export class AdsTransport {
   }
   async dispatch(tool: AdsTool, args: any): Promise<any> {
     if (tool.action === 'meta_mcp') return this.metaMcpCall(tool, args);
+    if (tool.action === 'publish_creative') return this.publishMetaCreative(args);
     if (tool.platform === 'meta') return this.meta(tool, args);
     if (tool.platform === 'google') return this.google(tool, args);
     return this.ga4(tool, args);
@@ -156,6 +158,25 @@ export class AdsTransport {
     if (!/^v\d+$/.test(version)) throw new Error('Invalid Google Ads API version');
     return this.request('google', new URL(`https://googleads.googleapis.com/${version}/${name}`));
   }
+  private async publishMetaCreative(a: any): Promise<any> {
+    const ids: Record<string, string> = {};
+    try {
+      const image = await this.meta({ action: 'create', resource: 'adimages' } as AdsTool, { accountId: a.accountId, data: { bytes: a.imageBytes } });
+      const hash = (Object.values(image.images ?? {})[0] as any)?.hash;
+      if (typeof hash !== 'string' || !hash) throw new Error('Image upload response omitted its hash');
+      ids.imageHash = hash;
+      const data = { name: a.name, object_story_spec: { page_id: a.pageId, link_data: { image_hash: hash, link: a.destinationUrl, message: a.primaryText, name: a.headline, description: a.description, call_to_action: { type: a.callToAction, value: { link: a.destinationUrl } } } } };
+      const creative = await this.meta({ action: 'create', resource: 'adcreatives' } as AdsTool, { accountId: a.accountId, data });
+      if (!/^\d+$/.test(creative?.id ?? '')) throw new Error('Creative response omitted its object ID');
+      ids.creative = creative.id;
+      const readback = await this.meta({ action: 'get' } as AdsTool, { objectId: creative.id, fields: ['id','name','object_story_spec'], params: {} });
+      if (String(readback.id) !== String(creative.id) || readback.name !== a.name || !isDeepStrictEqual(readback.object_story_spec, JSON.parse(JSON.stringify(data.object_story_spec)))) throw new Error('Creative readback did not match the approved image and copy');
+      return { ids, readback, remoteVerified: true };
+    } catch (error) {
+      const rejected = error instanceof ProviderError && error.status >= 400 && error.status < 500 && error.status !== 408;
+      throw new HierarchyDispatchError(error instanceof Error ? error.message : String(error), { ids, remoteVerified: false }, ids.creative || rejected && ids.imageHash ? 'PARTIAL' : rejected ? 'FAILED' : 'UNCERTAIN');
+    }
+  }
   async launchMetaHierarchy(a: any): Promise<any> {
     a = { ...a, ...a.providerPayload };
     const ids: Record<string, string> = { ...(a.existingIds ?? {}) };
@@ -169,7 +190,17 @@ export class AdsTransport {
       if (!ids.campaign) await create('campaign', 'campaigns', payloads.campaign);
       payloads.adset = { ...a.adset, campaign_id: ids.campaign, status: 'PAUSED' };
       if (!ids.adset) await create('adset', 'adsets', payloads.adset);
-      payloads.creative = a.creative;
+      const { imageBytes, ...creative } = a.creative;
+      payloads.creative = creative;
+      if (imageBytes) {
+        if (!ids.imageHash) {
+          const image = await this.meta({ action: 'create', resource: 'adimages' } as AdsTool, { accountId: a.accountId, data: { bytes: imageBytes } });
+          const hash = (Object.values(image.images ?? {})[0] as any)?.hash;
+          if (typeof hash !== 'string' || !hash) throw new Error('Image upload response omitted its hash');
+          ids.imageHash = hash;
+        }
+        payloads.creative = { ...creative, object_story_spec: { ...creative.object_story_spec, link_data: { ...creative.object_story_spec.link_data, image_hash: ids.imageHash } } };
+      }
       if (!ids.creative) await create('creative', 'adcreatives', payloads.creative);
       payloads.ad = { ...a.ad, adset_id: ids.adset, creative: { creative_id: ids.creative }, status: 'PAUSED' };
       if (!ids.ad) await create('ad', 'ads', payloads.ad);
@@ -180,14 +211,14 @@ export class AdsTransport {
         creative: ['id','name','object_story_id','object_story_spec','instagram_actor_id','url_tags'],
         ad: ['id','name','status','effective_status','adset_id','creative','tracking_specs','issues_info']
       };
-      for (const [step, objectId] of Object.entries(ids)) readbacks[step] = await this.meta({ platform: 'meta', action: 'get' } as AdsTool, { objectId, fields: fields[step], params: {} });
+      for (const [step, objectId] of Object.entries(ids)) if (fields[step]) readbacks[step] = await this.meta({ platform: 'meta', action: 'get' } as AdsTool, { objectId, fields: fields[step], params: {} });
       const comparable: Record<string, string[]> = { campaign: ['name','status','objective','daily_budget','lifetime_budget','bid_strategy','special_ad_categories'], adset: ['name','status','campaign_id','optimization_goal','billing_event','targeting','destination_type','promoted_object','attribution_spec','daily_budget','lifetime_budget'], creative: ['name','object_story_id','object_story_spec','instagram_actor_id','url_tags'], ad: ['name','status','adset_id','creative'] };
-      const equal = (left: any, right: any) => left && typeof left === 'object' || right && typeof right === 'object' ? JSON.stringify(left) === JSON.stringify(right) : String(left) === String(right);
+      const equal = (left: any, right: any) => left && typeof left === 'object' || right && typeof right === 'object' ? isDeepStrictEqual(left, JSON.parse(JSON.stringify(right))) : String(left) === String(right);
       for (const [step, keys] of Object.entries(comparable)) for (const key of keys) if (payloads[step][key] !== undefined && !equal(readbacks[step]?.[key], payloads[step][key])) throw new Error(`${step}.${key} readback did not match the approved payload`);
       return { ids, readbacks, delivery: 'PAUSED', remoteVerified: true, configurationVerified: true, policy: { campaign: readbacks.campaign.effective_status ?? 'UNKNOWN', adset: readbacks.adset.effective_status ?? 'UNKNOWN', ad: readbacks.ad.effective_status ?? 'UNKNOWN', issues: [readbacks.campaign.issues_info, readbacks.adset.issues_info, readbacks.ad.issues_info].filter(Boolean) }, advantageState: readbacks.campaign.advantage_state_info ?? null };
     } catch (error) {
       const knownFailure = error instanceof ProviderError && error.status >= 400 && error.status < 500 && error.status !== 408;
-      const count = Object.keys(ids).length;
+      const count = ['campaign','adset','creative','ad'].filter(step => ids[step]).length;
       throw new HierarchyDispatchError(error instanceof Error ? error.message : String(error), { ids, delivery: 'UNKNOWN', remoteVerified: false }, knownFailure && !count ? 'FAILED' : knownFailure || count === 4 ? 'PARTIAL' : 'UNCERTAIN');
     }
   }

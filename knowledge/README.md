@@ -6,6 +6,8 @@ Harnesses that load skill folders can also load `creative/` directly (it has its
 
 ## Tools vs knowledge: which to call
 
+For a new Meta campaign, collect the final media, copy, audience, budget, identity and destination into one spec and use `ads_launch_meta`. Use `spec.ad.creative.imageBytes` for fresh base64 image media. Its one approval covers image upload, the campaign, ad set, creative and ad; do not create separate approval requests for those children. For an image creative alone, use `ads_publish_meta_creative` to bundle image upload and final copy into one approval. Drafts and local previews are review material, not separate publishing approvals. Changed payloads need a new operation ID and approval; never reuse approval for different content. Activation remains a separate manual decision in Meta.
+
 1. **A tool or `skill_*` capability does the work.** Tools read accounts, validate drafts, run reports and prepare launches; `skill_*` capabilities report, research and record learnings. If one exists for the task, call it. Knowledge steers what you pass in and how you judge what comes back. It never replaces the call.
 2. **Knowledge is read before the tool, not instead of it.** Read the files for your task (table below), then discover and run the tool.
 3. **Safety rules live in code and cannot be overridden by any page.** Approvals, paused-first creation, validateOnly and no retry on uncertain writes all come from the tools. If a page says "just pause it" or "scale 3x", that is still a proposal (`ads_create_recommendation`), never a direct write.

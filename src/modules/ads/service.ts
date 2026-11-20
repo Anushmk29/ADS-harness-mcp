@@ -438,6 +438,13 @@ export class AdsService {
     const claimed = this.store().claim(record.id, this.workerId);
     if (!claimed) return this.store().get(record.id);
     record = claimed;
+    const heartbeat = setInterval(() => {
+      if (!this.closed) {
+        try { this.store().renew(record.id, this.workerId); }
+        catch { console.warn(`[ads] Could not renew dispatch lease for ${record.id}`); }
+      }
+    }, 20_000);
+    heartbeat.unref();
     try {
       record.result = ['launch','continue_launch'].includes(tool.action) ? await this.transport.launchMetaHierarchy(args) : await this.transport.dispatch(tool, args);
       if (record.result?.partialFailureError) transition(record, 'PARTIAL');
@@ -445,11 +452,12 @@ export class AdsService {
         transition(record, 'VERIFIED');
         this.records().save('rollout_gate', 'meta_paused_lifecycle', { verifiedAt: new Date().toISOString(), operationId: record.id, accountId: record.binding.accountId, result: record.result });
       }
+      else if (tool.action === 'publish_creative') transition(record, 'VERIFIED');
     } catch (error) {
       if (error instanceof HierarchyDispatchError) record.result = error.partial;
       transition(record, error instanceof HierarchyDispatchError ? error.outcome : error instanceof ProviderError && error.status >= 400 && error.status < 500 && error.status !== 408 ? 'FAILED' : 'UNCERTAIN');
       record.error = error instanceof Error ? error.message : String(error);
-    }
+    } finally { clearInterval(heartbeat); }
     return this.store().finish(record, this.workerId) ? record : this.store().get(record.id);
   }
   close() { this.closed = true; this.journal?.close(); this.state?.close(); void this.transport.close().catch(() => {}); }

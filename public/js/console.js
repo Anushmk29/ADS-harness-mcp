@@ -142,7 +142,10 @@
         } catch (error) { toast(error.message); wrap.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
       }));
       function card(item) {
-        const change = item.details?.change ? `<div class="preview">${esc(JSON.stringify(item.details.change, null, 2))}</div>` : '';
+        const { imageBytes, ...details } = item.details?.change ?? {};
+        const media = imageBytes ?? details.spec?.ad?.creative?.imageBytes;
+        const image = media ? `<img alt="Image included in this creative approval" src="data:image/png;base64,${esc(media)}" style="max-width:100%;max-height:360px;object-fit:contain">` : '';
+        const change = item.details?.change ? `${image}<div class="preview">${esc(JSON.stringify(details, (key, value) => key === 'imageBytes' ? '[image shown above]' : value, 2))}</div>` : '';
         return `<div class="c-card approval" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">
           <span class="pill wait">Ad change</span>
           <h3>${esc(item.title)}</h3><p>${esc(item.description)}</p>
@@ -215,8 +218,97 @@
         try { await api('/api/business/config', { method: 'PATCH', body: JSON.stringify(patch) }); toast('Saved'); $('#biz-msg').textContent = ''; }
         catch (error) { $('#biz-msg').textContent = error.message; }
       });
+    },
+
+    // Operator view: every MCP call (Claude, Codex, other clients) and scheduled harness job, with a verdict per output.
+    async agent() {
+      const f = state.agentFilter ||= { days: '7', client: '', tool: '', status: '', rated: '' };
+      const qs = new URLSearchParams(Object.entries(f).filter(([, v]) => v));
+      const d = await api(`/api/console/agent?${qs}`);
+      const s = d.stats, pct = (n, of) => of ? `${Math.round((n / of) * 100)}%` : '—';
+      const opt = (key, values, label) => `<select data-filter="${key}" aria-label="${label}"><option value="">${label}: all</option>${values.map(v => `<option value="${esc(v)}" ${f[key] === String(v) ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+      main().innerHTML = `<h1 class="c-h1">Agent activity</h1>
+        <p class="c-sub">What Claude, Codex and the harness's own scheduled jobs did through this system. Mark outputs useful or wrong; the weekly agent report lists what to fix.</p>
+        <div class="filters">
+          <select data-filter="days" aria-label="Period">${[1, 7, 30, 90].map(n => `<option value="${n}" ${f.days === String(n) ? 'selected' : ''}>Last ${n} day${n > 1 ? 's' : ''}</option>`).join('')}</select>
+          ${opt('client', s.byClient.map(c => c.client), 'Source')}
+          ${opt('tool', s.byTool.map(t => t.tool), 'Tool')}
+          ${opt('status', ['ok', 'failed'], 'Status')}
+          ${opt('rated', ['good', 'bad'], 'Rating')}
+          <button class="c-btn ghost" id="agent-refresh">Refresh</button>
+        </div>
+        <div class="c-grid">
+          <div class="c-card c-kpi"><div class="label">Calls</div><div class="value">${fmt(s.calls)}</div><div class="delta flat">${s.byClient.length} source(s)</div></div>
+          <div class="c-card c-kpi"><div class="label">Failed</div><div class="value">${fmt(s.failed)}</div><div class="delta ${s.failed ? 'down' : 'flat'}">${pct(s.failed, s.calls)} of calls</div></div>
+          <div class="c-card c-kpi"><div class="label">Rated useful</div><div class="value">${fmt(s.good)}</div><div class="delta flat">by you</div></div>
+          <div class="c-card c-kpi"><div class="label">Rated wrong</div><div class="value">${fmt(s.bad)}</div><div class="delta ${s.bad ? 'down' : 'flat'}">to fix</div></div>
+        </div>
+        ${s.byDay.length ? `<h2 class="c-h2">Calls per day</h2><div class="c-card">${dayChart(s.byDay)}</div>` : ''}
+        <h2 class="c-h2">By source</h2>
+        <div class="c-card table-wrap">${s.byClient.length ? `<table class="c-table"><thead><tr><th>Source</th><th>Calls</th><th>Failed</th><th>Last seen</th></tr></thead><tbody>
+          ${s.byClient.map(c => `<tr><td>${esc(c.client)}</td><td>${fmt(c.calls)}</td><td>${fmt(c.failed)}</td><td>${esc(when(c.lastTs))}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No calls yet. Connect Claude Code or Codex to bin/mcp.js, or wait for the next scheduled job.</p>'}</div>
+        <h2 class="c-h2">By tool</h2>
+        <div class="c-card table-wrap">${s.byTool.length ? `<table class="c-table"><thead><tr><th>Tool</th><th>Calls</th><th>Failed</th><th>Avg time</th><th>Slowest</th><th>Useful</th><th>Wrong</th></tr></thead><tbody>
+          ${s.byTool.map(t => `<tr><td class="mono">${esc(t.tool)}</td><td>${fmt(t.calls)}</td><td>${t.failed ? `<span class="pill bad">${fmt(t.failed)} (${pct(t.failed, t.calls)})</span>` : '0'}</td><td>${ms(t.avgMs)}</td><td>${ms(t.maxMs)}</td><td>${fmt(t.good)}</td><td>${fmt(t.bad)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">Nothing yet.</p>'}</div>
+        ${s.topErrors.length ? `<h2 class="c-h2">Most common errors</h2><div class="c-card table-wrap"><table class="c-table"><thead><tr><th>Tool</th><th>Error</th><th>Times</th><th>Last</th></tr></thead><tbody>
+          ${s.topErrors.map(e => `<tr><td class="mono">${esc(e.tool)}</td><td>${esc(e.error)}</td><td>${fmt(e.count)}</td><td>${esc(when(e.lastTs))}</td></tr>`).join('')}</tbody></table></div>` : ''}
+        <h2 class="c-h2">Calls <span class="c-sub" style="font-weight:400">newest first, up to 200; click one for the full input and output</span></h2>
+        <div class="c-card table-wrap">${d.calls.length ? `<table class="c-table"><thead><tr><th>When</th><th>Source</th><th>Tool</th><th>Time</th><th>Result</th><th>Output</th></tr></thead><tbody>
+          ${d.calls.map(c => `<tr class="call-row" data-call="${c.id}" tabindex="0"><td>${esc(when(c.ts))}</td><td>${esc(c.client)}</td><td class="mono">${esc(c.tool)}</td><td>${ms(c.durationMs)}</td>
+            <td>${c.ok ? '<span class="pill ok">ok</span>' : '<span class="pill bad">failed</span>'}${c.rating === 1 ? ' 👍' : c.rating === -1 ? ' 👎' : ''}</td><td class="mono">${esc(c.ok ? c.output : c.error)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No calls match these filters.</p>'}</div>
+        <h2 class="c-h2">Agent reports</h2>
+        <div class="c-card"><p><button class="c-btn primary" id="agent-save">Save a report now</button> <span class="c-sub">One is also saved every Monday. It lists failures, outputs you marked wrong, and what to fix.</span></p>
+          ${d.reports.length ? d.reports.map(r => `<div class="milestone"><div>Week ending ${esc(r.period)}</div><span class="owner"><button class="c-btn ghost" data-agent-report="${esc(r.id)}">Open</button></span></div>`).join('') : '<p class="empty">No saved reports yet.</p>'}
+          <div id="agent-report-view"></div></div>`;
+      main().querySelectorAll('[data-filter]').forEach(el => el.addEventListener('change', () => { f[el.dataset.filter] = el.value; go('agent'); }));
+      $('#agent-refresh').addEventListener('click', () => go('agent'));
+      $('#agent-save').addEventListener('click', async () => {
+        const r = await api('/api/console/agent/report', { method: 'POST' });
+        toast('Report saved'); await VIEWS.agent(); showAgentReport(r.report);
+      });
+      main().querySelectorAll('[data-agent-report]').forEach(b => b.addEventListener('click', async () => showAgentReport((await api(`/api/console/reports/${encodeURIComponent(b.dataset.agentReport)}`)).report)));
+      main().querySelectorAll('.call-row').forEach(row => {
+        row.addEventListener('click', () => toggleCall(row));
+        row.addEventListener('keydown', e => { if (e.key === 'Enter') toggleCall(row); });
+      });
     }
   };
+
+  const ms = n => n === null || n === undefined ? '—' : n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`;
+  const pretty = text => { try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text ?? ''; } };
+
+  async function toggleCall(row) {
+    const next = row.nextElementSibling;
+    if (next?.classList.contains('call-detail')) { next.remove(); return; }
+    const { call: c } = await api(`/api/console/agent/calls/${row.dataset.call}`);
+    const tr = document.createElement('tr'); tr.className = 'call-detail';
+    tr.innerHTML = `<td colspan="6"><strong>Input</strong><div class="preview">${esc(pretty(c.args))}</div>
+      <strong style="display:block;margin-top:10px">${c.ok ? 'Output' : 'Error'}</strong><div class="preview">${esc(c.ok ? pretty(c.output) : c.error)}</div>
+      <textarea class="c-textarea" aria-label="Note on this output" placeholder="What was wrong or right about this output? (optional)">${esc(c.note ?? '')}</textarea>
+      <div class="actions"><button class="c-btn ${c.rating === 1 ? 'primary' : ''}" data-rate="1">👍 Useful</button> <button class="c-btn ${c.rating === -1 ? 'primary' : ''}" data-rate="-1">👎 Wrong</button> <button class="c-btn ghost" data-rate="null">Clear</button></div></td>`;
+    row.after(tr);
+    tr.querySelectorAll('[data-rate]').forEach(b => b.addEventListener('click', async () => {
+      await api(`/api/console/agent/calls/${c.id}/rating`, { method: 'POST', body: JSON.stringify({ rating: JSON.parse(b.dataset.rate), note: tr.querySelector('textarea').value.trim() }) });
+      toast('Saved'); go('agent');
+    }));
+  }
+
+  function showAgentReport(r) {
+    const el = $('#agent-report-view'); if (!el || !r) return;
+    el.innerHTML = `<h3 style="margin-top:16px">${esc(r.since)} to ${esc(r.until)}</h3><p>${esc(r.headline)}</p>
+      <strong>What to fix</strong>${r.improvements.length ? `<ul class="improve">${r.improvements.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : '<p class="empty">Nothing stands out.</p>'}
+      ${r.flagged.length ? `<strong>Outputs you marked wrong</strong><ul class="improve">${r.flagged.map(x => `<li><span class="mono">${esc(x.tool)}</span> (${esc(x.client)}, ${esc(when(x.ts))}): ${esc(x.note || 'no note')}</li>`).join('')}</ul>` : ''}
+      ${r.failures.length ? `<strong>Recent failures</strong><ul class="improve">${r.failures.map(x => `<li><span class="mono">${esc(x.tool)}</span> (${esc(x.client)}, ${esc(when(x.ts))}): ${esc(x.error)}</li>`).join('')}</ul>` : ''}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function dayChart(days) {
+    const W = 720, H = 180, P = 30, max = Math.max(1, ...days.map(d => d.calls)), step = (W - 2 * P) / days.length;
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day; the red part failed">${days.map((d, i) => {
+      const x = P + i * step + step * 0.2, w = step * 0.6, h = (d.calls / max) * (H - 2 * P), fh = (d.failed / max) * (H - 2 * P);
+      return `<rect x="${x}" y="${H - P - h}" width="${w}" height="${h}" fill="#a7f3d0" rx="3"><title>${esc(d.day)}: ${d.calls} calls</title></rect>${d.failed ? `<rect x="${x}" y="${H - P - fh}" width="${w}" height="${fh}" fill="#ef4444" rx="3"><title>${d.failed} failed</title></rect>` : ''}${i % Math.ceil(days.length / 8) === 0 ? `<text x="${x + w / 2}" y="${H - 10}" font-size="11" text-anchor="middle" fill="#64748b">${esc(d.day.slice(5))}</text>` : ''}`;
+    }).join('')}</svg>`;
+  }
 
   function timeline(items) {
     if (!items?.length) return '<p class="empty">Nothing yet. As soon as work starts it shows up here.</p>';

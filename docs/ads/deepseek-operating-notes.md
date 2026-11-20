@@ -9,11 +9,11 @@
 - Campaign launch uses two checkpoints: approval to create the paused hierarchy, followed by separate activation approval after provider readback and readiness verification.
 - During specification interviews, the operator prefers all remaining questions in one batch rather than one at a time.
 - Read-only reports, readiness checks, capability discovery, and tracking audits run without approval.
-- Every provider mutation requires exact-payload approval. No standing or reusable approvals exist in v1.
+- Every provider mutation must be covered by exact-payload approval. Use `ads_launch_meta` for one approval covering its campaign, ad set, creative and ad, or `ads_publish_meta_creative` for image upload plus final copy. Do not split these workflows into child approvals. Changed content requires fresh approval; no standing account-wide approval exists.
 - Approval briefs include provider/account, objective, audience, placements, creative, destination, conversion goal, schedule, budget, bid strategy, tracking, warnings, exact changes, and expected outcome.
 - A single verified default account/property may be selected automatically; multiple candidates require an operator choice.
 - Missing inputs leave a durable draft and cause no provider write.
-- V1 uses only existing operator-approved creative assets/posts.
+- Campaign launches accept existing media/posts or a fresh base64 image; the final media and copy are covered by the workflow approval.
 - Monitoring runs daily at 08:00 in the provider account timezone and on demand.
 - Optimizations are evidence-backed proposals only; mutations always return through approval.
 - Batch approval is allowed only when every operation and payload hash is shown. Partial failures remain visible.

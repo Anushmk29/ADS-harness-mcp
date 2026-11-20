@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ga4ReportSpecSchema, metaCampaignSpecSchema } from './contracts.js';
+import { ga4ReportSpecSchema, metaCampaignSpecSchema, metaImageBytesSchema } from './contracts.js';
 import { metaMcpMapping } from './meta-mcp/mapping.js';
 import { metaMcpSnapshot } from './meta-mcp/snapshot.js';
 
@@ -60,7 +60,9 @@ add({ name: 'ads_compare_performance', description: 'Compare supplied platform m
 const period = z.object({ impressions: z.number().int().nonnegative(), clicks: z.number().int().nonnegative(), spend: money, conversions: money, frequency: money.optional() }).strict();
 add({ name: 'ads_analyze_creative', description: 'Evaluate supplied comparable mature periods; return review suggestions, not automatic pauses', platform: 'meta', write: false, action: 'analyze',
   schema: z.object({ adId: id, baseline: period, current: period, conversionLagElapsed: z.boolean(), minimumImpressions: z.number().int().positive().default(1000), minimumConversions: z.number().int().positive().default(10) }).strict() });
-add({ name: 'ads_launch_meta', description: 'Revalidate a typed Meta spec, require persisted account readiness, then create/read back one paused hierarchy under one exact-payload approval.', platform: 'meta', write: true, action: 'launch', resource: 'hierarchy',
+add({ name: 'ads_publish_meta_creative', description: 'Upload an image and create/read back its complete Meta creative under ONE approval covering the image, copy, identity, destination and CTA. Use instead of separate image and creative write approvals. Does not create or activate an ad.', platform: 'meta', write: true, action: 'publish_creative', resource: 'adcreatives',
+  schema: z.object({ ...scope, name: z.string().min(1), pageId: id, imageBytes: metaImageBytesSchema, primaryText: z.string().min(1), headline: z.string().optional(), description: z.string().optional(), destinationUrl: z.string().url(), callToAction: z.string().min(1) }).strict() });
+add({ name: 'ads_launch_meta', description: 'Preferred for new Meta campaigns: submit the complete campaign, ad set, creative media and copy, and ad together under ONE exact-payload approval. Do not stage separate child approvals. Requires persisted account readiness; creates and verifies the hierarchy PAUSED.', platform: 'meta', write: true, action: 'launch', resource: 'hierarchy',
   schema: z.object({ accountId: id, launchId: z.string().regex(/^[a-zA-Z0-9_-]{1,70}$/), operationId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/).optional(), spec: metaCampaignSpecSchema, providerPayload: z.object({ campaign: record, adset: record, creative: record, ad: record }).strict().optional() }).strict() });
 add({ name: 'ads_continue_meta_launch', description: 'Continue a PARTIAL Meta hierarchy from persisted child IDs under a new exact approval. launchId is the latest PARTIAL launch or continuation operation ID. Each source can have only one active continuation; UNCERTAIN outcomes require manual reconciliation.', platform: 'meta', write: true, action: 'continue_launch', resource: 'hierarchy',
   schema: z.object({ accountId: id, launchId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), operationId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), providerPayload: z.object({ campaign: record, adset: record, creative: record, ad: record }).strict().optional(), existingIds: z.record(z.string()).optional() }).strict() });

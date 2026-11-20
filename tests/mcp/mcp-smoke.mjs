@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-const transport = new StdioClientTransport({ command: process.execPath, args: ['bin/mcp.js','ads','meta'], cwd: process.cwd(), stderr: 'pipe' });
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+// Temp DATA_DIR so smoke calls never land in the real Agent activity log.
+const transport = new StdioClientTransport({ command: process.execPath, args: ['bin/mcp.js','ads','meta'], cwd: process.cwd(), stderr: 'pipe', env: { ...process.env, DATA_DIR: mkdtempSync(join(tmpdir(), 'mcp-smoke-')) } });
 const client = new Client({ name: 'local-smoke', version: '1' });
 try {
   await client.connect(transport);

@@ -93,6 +93,17 @@ body.inside-mode #console, body.inside-mode #login-screen { display: none; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--c-ink); color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 300; }
 .back-to-console { position: fixed; top: 76px; left: 16px; z-index: 200; }
 
+/* Agent activity */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filters select { font: inherit; border: 1px solid var(--c-line); border-radius: 10px; padding: 8px 10px; background: #fff; color: var(--c-ink); max-width: 100%; }
+.table-wrap { overflow-x: auto; }
+.call-row { cursor: pointer; }
+.call-row:hover td { background: var(--c-surface); }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; word-break: break-all; }
+.call-detail td { background: var(--c-surface); }
+.call-detail .preview { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #fff; }
+.improve li { margin: 6px 0 6px 18px; }
+
 @media (max-width: 760px) {
   #console { grid-template-columns: minmax(0, 1fr); }
   .rail { position: static; height: auto; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--c-line); padding: 10px; }

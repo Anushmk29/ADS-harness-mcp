@@ -40,7 +40,27 @@ export function latestReview(records: any[], until: string): any | undefined {
     campaigns: chosen.flatMap(r => r.campaigns ?? []).sort((a, b) => b.spend - a.spend) };
 }
 
+/** Scheduler and `cli job` runs both go through here, so every harness job lands in the Agent activity log. */
 export function defaultSystemHandlers(root: string): SystemHandlers {
+  const handlers = systemHandlers(root);
+  return Object.fromEntries(Object.entries(handlers).map(([name, handler]) => [name, async (input: any) => {
+    const started = Date.now();
+    let result: any, error: string | undefined;
+    try { result = await handler(input); return result; }
+    catch (e: any) { error = e?.message ?? String(e); throw e; }
+    finally {
+      try {
+        const tracking = new TrackingStore(join(root, 'tracking'));
+        try {
+          const failed = error !== undefined || result?.status === 'FAILED';
+          tracking.logToolCall({ client: 'harness', tool: `job:${name}`, args: input, ok: !failed, durationMs: Date.now() - started, output: result, error: error ?? (failed ? String(result?.error ?? 'failed') : undefined) });
+        } finally { tracking.close(); }
+      } catch { /* logging must not change the job's outcome */ }
+    }
+  }])) as SystemHandlers;
+}
+
+function systemHandlers(root: string): SystemHandlers {
   return {
     async 'kpi-snapshot'(input) {
       const { AdsService } = await import('../modules/ads/service.js');
@@ -140,6 +160,14 @@ export function defaultSystemHandlers(root: string): SystemHandlers {
       for (const c of fails) await alert('critical', `doctor:${c.name}`, c.detail);
       return { status: 'COMPLETED', fails: fails.map(c => `${c.name}: ${c.detail}`) };
     },
+    async 'agent-report'() {
+      const { saveAgentReport } = await import('../core/tracking/agent-report.js');
+      const tracking = new TrackingStore(join(root, 'tracking'));
+      try {
+        const { id, report } = saveAgentReport(tracking);
+        return { status: 'COMPLETED', reportId: id, headline: report.headline, improvements: report.improvements.length };
+      } finally { tracking.close(); }
+    },
     async backup() {
       const dir = join(root, 'backups');
       const files = backupDataDir(join(dir, new Date().toISOString().slice(0, 10)), root);
@@ -160,6 +188,7 @@ export function defaultJobs(now = Date.now()): DepartmentJob[] {
     // Runs before the weekly report (Monday 07:45) so the report carries this week's findings.
     { id: 'competitor-watch-weekly', department: 'system', capability: 'competitor-watch', nextRunAt: nextLocal(6, 30, now, 1), intervalMs: 7 * DAY },
     { id: 'ads-review-weekly', department: 'system', capability: 'ads-review', nextRunAt: nextLocal(7, 45, now, 1), intervalMs: 7 * DAY },
+    { id: 'agent-report-weekly', department: 'system', capability: 'agent-report', nextRunAt: nextLocal(8, 15, now, 1), intervalMs: 7 * DAY },
     { id: 'doctor-daily', department: 'system', capability: 'doctor', nextRunAt: nextLocal(6, 0, now), intervalMs: DAY },
     { id: 'backup-nightly', department: 'system', capability: 'backup', nextRunAt: nextLocal(2, 30, now), intervalMs: DAY }
   ];

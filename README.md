@@ -20,6 +20,7 @@ strategy.
 | **Competitor ads** (`skill_competitor_ads`, `job competitor-watch`) | Pulls real ads from the Meta Ad Library through Apify. Code finds the longest-running ads, formats, CTAs, offers and landing domains. Each week it shows which competitor ads are new. A model may group ads into angles, and every angle must name real ad IDs. | Needs a paid Apify key (`COMPETITOR_API_KEY`). It shows what competitors run, not how much they spend or how well their ads do. Without a key it shows an error, never sample data. |
 | **Creative fatigue watch** (`job ads-fatigue`) | Flags ads whose frequency is rising while CTR falls, and proposes pausing them. | Overlaps with the fatigue rule in the weekly findings. |
 | **Ad changes with approval** (MCP tools, dashboard) | Claude or the dashboard can propose edits. Each one is stored with its exact payload, and only that exact payload can be approved and applied. | Dry-run until you turn on live mode for each platform and account. |
+| **Agent activity** (dashboard → Agent activity, `job agent-report`) | Records every call Claude, Codex or another MCP client makes, plus every scheduled harness job, with its input, output, errors and time taken. You mark outputs useful or wrong, and a weekly agent report lists failures, wrong outputs and what to fix. | Records calls only. It doesn't see what an agent does outside this MCP server. The "what to fix" pointers come from simple thresholds, and fixing is still your job. |
 | **Health check** (`job doctor`, `bin/cli.js doctor`) | Checks credentials, token expiry, targets, whether the pixel fired in the last 48 hours, the Apify key, and model fallback and budget. | It reports problems. It does not fix them. |
 
 **You still need to:** grant the Meta token `ads_read` and `ads_management` permissions,
@@ -57,7 +58,7 @@ node --env-file=.env bin/cli.js dashboard
 node --env-file=.env bin/cli.js ads-status
 
 # Run a scheduled job now: ads-review (findings + approvals), report weekly|monthly,
-# competitor-watch, kpi-snapshot, ads-fatigue, doctor, backup
+# competitor-watch, kpi-snapshot, ads-fatigue, agent-report, doctor, backup
 node --env-file=.env bin/cli.js job ads-review
 ```
 

@@ -120,9 +120,10 @@ const metaAdSetSchema = z.object({
   advantageAudience: z.boolean().default(false), datasetId: z.string().optional(), appId: z.string().optional(), promotedObject: z.record(z.unknown()).optional(),
   purchaseValueSource: z.boolean().default(false), purchaseEventReady: z.boolean().default(false), appEventsReady: z.boolean().default(false), attributionWindows: z.array(z.enum(['1d_click','7d_click','1d_view'])).default([]), status: z.enum(['PAUSED','ACTIVE']).optional()
 }).strict();
+export const metaImageBytesSchema = z.string().min(4).max(12_000_000).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/, 'Use base64 image bytes');
 const metaAdSchema = z.object({
   name: z.string().min(1), pageId: z.string().min(1), instagramActorId: z.string().optional(),
-  creative: z.object({ existingPostId: z.string().optional(), imageHash: z.string().optional(), videoId: z.string().optional() }).strict().refine(value => Boolean(value.existingPostId || value.imageHash || value.videoId), 'Provide an existing post, image hash, or video ID'),
+  creative: z.object({ existingPostId: z.string().optional(), imageHash: z.string().optional(), imageBytes: metaImageBytesSchema.optional(), videoId: z.string().optional() }).strict().refine(value => [value.existingPostId, value.imageHash, value.imageBytes, value.videoId].filter(Boolean).length === 1, 'Provide exactly one existing post, image hash, base64 image, or video ID'),
   destinationUrl: z.string().url().optional(), leadFormId: z.string().optional(), primaryText: z.string().min(1), headline: z.string().optional(), description: z.string().optional(), callToAction: z.string().min(1),
   urlParameters: z.record(z.string()).default({}), status: z.enum(['PAUSED','ACTIVE']).optional()
 }).strict();
